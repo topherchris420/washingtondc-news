@@ -392,40 +392,51 @@ const DCNewsLanding = () => {
 
             <ScrollReveal delay={60}>
               <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-emerald-600 pb-2 mb-4">For You</h3>
-                {forYouArticles.length > 0 ? (
-                  <ul className="space-y-2.5">
-                    {forYouArticles.map((article) => (
-                      <li key={article.id}>
-                        <button type="button" onClick={() => handleArticleOpen(article)} className="text-left w-full text-sm text-gray-700 hover:text-blue-900 leading-snug transition-colors">
-                          {article.title}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-xs text-gray-500">Read a few stories and we will tailor this block to your recent interests.</p>
-                )}
+                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-emerald-600 pb-2 mb-4">Recommended</h3>
+                {(() => {
+                  const recommended = forYouArticles.length > 0 ? forYouArticles : articles.slice(2, 5);
+                  return recommended.length > 0 ? (
+                    <ul className="space-y-2.5">
+                      {recommended.map((article) => (
+                        <li key={article.id}>
+                          <button type="button" onClick={() => handleArticleOpen(article)} className="text-left w-full text-sm text-gray-700 hover:text-blue-900 leading-snug transition-colors font-medium">
+                            {article.title}
+                          </button>
+                          <p className="text-[10px] text-gray-400 mt-0.5">{article.source.name} • {formatTime(article.publishedAt)}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null;
+                })()}
               </div>
             </ScrollReveal>
 
             <ScrollReveal delay={80}>
               <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-violet-600 pb-2 mb-4">Continue Reading</h3>
-                {continueReading.length > 0 ? (
-                  <ul className="space-y-2.5">
-                    {continueReading.map((item) => (
-                      <li key={item.id}>
-                        <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-700 hover:text-blue-900 leading-snug transition-colors">
-                          {item.title}
-                        </a>
-                        <p className="text-[11px] text-gray-400 mt-0.5">{item.category} • {item.sourceName}</p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-xs text-gray-500">Articles you open in this session appear here.</p>
-                )}
+                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-violet-600 pb-2 mb-4">Latest Updates</h3>
+                {(() => {
+                  const latestItems = continueReading.length > 0
+                    ? continueReading
+                    : articles.slice(5, 9).map((a) => ({
+                        id: a.id,
+                        title: a.title,
+                        url: a.url,
+                        sourceName: a.source.name,
+                        category: getArticleCategory(a.title, a.source.name),
+                      }));
+                  return latestItems.length > 0 ? (
+                    <ul className="space-y-2.5">
+                      {latestItems.map((item) => (
+                        <li key={item.id}>
+                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-700 hover:text-blue-900 leading-snug transition-colors font-medium">
+                            {item.title}
+                          </a>
+                          <p className="text-[11px] text-gray-400 mt-0.5">{item.category} • {item.sourceName}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null;
+                })()}
               </div>
             </ScrollReveal>
 
