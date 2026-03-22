@@ -2,7 +2,7 @@
 
 A responsive local covert News website for Washington DC. Features real-time DC news, weather updates, and trending stories.
 
-## ✨ Features
+## Features
 
 - **Live DC News** - Real-time news powered by GNews API
 - **Weather Widget** - Current conditions for Washington DC
@@ -11,7 +11,7 @@ A responsive local covert News website for Washington DC. Features real-time DC 
 - **Newsletter Signup** - Daily news delivered to your inbox
 - **Responsive Design** - Works on desktop, tablet, and mobile
 
-## 🚀 Quick Start
+## Quick Start
 
 Simply open `index.html` in a browser, or use a local server:
 
@@ -25,7 +25,7 @@ npx serve .
 
 Then visit `http://localhost:8080`
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ├── index.html          # Main HTML file with embedded CSS/JS
@@ -36,7 +36,7 @@ Then visit `http://localhost:8080`
 ```
 
 
-## 🕵️ COVCOM Architecture (Covert Communication)
+## COVCOM Architecture (Covert Communication)
 
 The hidden command flow now uses a small COVCOM layer (`src/lib/covcom.ts`) to centralize, type, and make it easy to extend covert triggers.
 
