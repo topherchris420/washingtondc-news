@@ -3,7 +3,7 @@ import dc4Logo from '@/assets/dc4-news-logo.png';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Clock, Cloud, Thermometer, Wind, ExternalLink, Mail, X, ImageOff } from 'lucide-react';
+import { Search, Clock, Cloud, Thermometer, Wind, ExternalLink, Mail, X, ImageOff, Droplets, Sun, Sunrise, Sunset, Eye, Gauge, ChevronRight } from 'lucide-react';
 import { FeaturedStoryCard } from '@/components/FeaturedStoryCard';
 import { useDCNews } from '@/hooks/useDCNews';
 import { useNewsPreferences } from '@/hooks/useNewsPreferences';
@@ -128,10 +128,12 @@ const DCNewsLanding = () => {
       {/* Top Bar */}
       <div className="bg-blue-950 text-white">
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between text-xs tracking-wide">
-          <div className="flex items-center gap-5">
-            <span className="flex items-center gap-1.5 font-medium"><Thermometer className="h-3 w-3 opacity-70" /> {weather.temp}°F</span>
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5 font-medium">{weather.icon} {weather.temp}°F</span>
             <span className="flex items-center gap-1.5 font-medium"><Cloud className="h-3 w-3 opacity-70" /> {weather.condition}</span>
-            <span className="hidden sm:flex items-center gap-1.5 font-medium"><Wind className="h-3 w-3 opacity-70" /> {weather.wind}</span>
+            <span className="hidden sm:flex items-center gap-1.5 text-blue-300">Feels {weather.feelsLike}°</span>
+            <span className="hidden md:flex items-center gap-1.5 font-medium"><Wind className="h-3 w-3 opacity-70" /> {weather.wind}</span>
+            <span className="hidden lg:flex items-center gap-1.5 font-medium"><Droplets className="h-3 w-3 opacity-70" /> {weather.humidity}%</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline text-blue-200">{today}</span>
@@ -428,19 +430,121 @@ const DCNewsLanding = () => {
             </ScrollReveal>
 
             <ScrollReveal delay={90}>
-              <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-blue-900 pb-2 mb-4">Weather</h3>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-5xl font-extralight text-gray-800 tabular-nums">{weather.temp}°</span>
-                    <p className="text-xs text-gray-600 mt-1.5 font-medium">{weather.condition}</p>
+              <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
+                {/* Weather Header */}
+                <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-5">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-xs font-black uppercase tracking-wider opacity-80">Washington, DC Weather</h3>
+                    <span className="text-[10px] opacity-60">Updated live</span>
                   </div>
-                  <div className="text-right text-xs text-gray-600 space-y-1.5">
-                    <p className="flex items-center justify-end gap-1.5">↑ <span className="font-semibold">{weather.high}°F</span></p>
-                    <p className="flex items-center justify-end gap-1.5">↓ <span className="font-semibold">{weather.low}°F</span></p>
-                    <p className="text-gray-500">{weather.wind}</p>
+                  <div className="flex items-center justify-between mt-3">
+                    <div>
+                      <div className="flex items-end gap-2">
+                        <span className="text-5xl font-extralight tabular-nums leading-none">{weather.temp}°</span>
+                        <span className="text-3xl mb-0.5">{weather.icon}</span>
+                      </div>
+                      <p className="text-sm font-medium mt-2 text-blue-100">{weather.condition}</p>
+                      <p className="text-xs text-blue-300 mt-0.5">Feels like {weather.feelsLike}°F</p>
+                    </div>
+                    <div className="text-right text-xs space-y-1">
+                      <p className="text-blue-100"><span className="text-red-300">↑</span> <span className="font-semibold text-white">{weather.high}°</span></p>
+                      <p className="text-blue-100"><span className="text-blue-300">↓</span> <span className="font-semibold text-white">{weather.low}°</span></p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Weather Details Grid */}
+                <div className="grid grid-cols-3 gap-px bg-gray-100">
+                  <div className="bg-white p-3 text-center">
+                    <Wind className="h-3.5 w-3.5 mx-auto text-gray-400 mb-1" />
+                    <p className="text-xs font-semibold text-gray-800">{weather.wind}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Wind</p>
+                  </div>
+                  <div className="bg-white p-3 text-center">
+                    <Droplets className="h-3.5 w-3.5 mx-auto text-blue-400 mb-1" />
+                    <p className="text-xs font-semibold text-gray-800">{weather.humidity}%</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Humidity</p>
+                  </div>
+                  <div className="bg-white p-3 text-center">
+                    <Cloud className="h-3.5 w-3.5 mx-auto text-gray-400 mb-1" />
+                    <p className="text-xs font-semibold text-gray-800">{weather.precipChance}%</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Precip</p>
+                  </div>
+                  <div className="bg-white p-3 text-center">
+                    <Sun className="h-3.5 w-3.5 mx-auto text-amber-400 mb-1" />
+                    <p className="text-xs font-semibold text-gray-800">{weather.uvIndex}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">UV Index</p>
+                  </div>
+                  <div className="bg-white p-3 text-center">
+                    <Gauge className="h-3.5 w-3.5 mx-auto text-gray-400 mb-1" />
+                    <p className="text-xs font-semibold text-gray-800">{weather.pressure}"</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Pressure</p>
+                  </div>
+                  <div className="bg-white p-3 text-center">
+                    <Thermometer className="h-3.5 w-3.5 mx-auto text-teal-400 mb-1" />
+                    <p className="text-xs font-semibold text-gray-800">{weather.dewPoint}°F</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Dew Point</p>
+                  </div>
+                </div>
+
+                {/* Sunrise / Sunset */}
+                <div className="flex items-center justify-between px-5 py-3 bg-gray-50 text-xs text-gray-600 border-t border-gray-100">
+                  <span className="flex items-center gap-1.5"><Sunrise className="h-3.5 w-3.5 text-amber-500" /> {weather.sunrise}</span>
+                  <span className="flex items-center gap-1.5"><Sunset className="h-3.5 w-3.5 text-orange-400" /> {weather.sunset}</span>
+                </div>
+
+                {/* Hourly Forecast */}
+                {weather.hourly.length > 0 && (
+                  <div className="border-t border-gray-100">
+                    <div className="px-5 pt-3 pb-1 flex items-center justify-between">
+                      <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Hourly</h4>
+                    </div>
+                    <div className="flex overflow-x-auto px-3 pb-3 gap-0 scrollbar-hide">
+                      {weather.hourly.slice(0, 8).map((hour, i) => (
+                        <div key={i} className="flex flex-col items-center min-w-[3.5rem] py-2 px-1">
+                          <span className="text-[10px] text-gray-500 font-medium">{i === 0 ? 'Now' : hour.time}</span>
+                          <span className="text-base my-1">{hour.icon}</span>
+                          <span className="text-xs font-semibold text-gray-800">{hour.temp}°</span>
+                          {hour.precipChance > 0 && (
+                            <span className="text-[9px] text-blue-500 font-medium mt-0.5">{hour.precipChance}%</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 7-Day Forecast */}
+                {weather.daily.length > 0 && (
+                  <div className="border-t border-gray-100">
+                    <div className="px-5 pt-3 pb-1">
+                      <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-wider">7-Day Forecast</h4>
+                    </div>
+                    <div className="px-5 pb-4">
+                      {weather.daily.map((day, i) => (
+                        <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                          <span className="text-xs font-semibold text-gray-700 w-12">{day.day}</span>
+                          <span className="text-base w-8 text-center">{day.icon}</span>
+                          {day.precipChance > 0 ? (
+                            <span className="text-[10px] text-blue-500 font-medium w-8 text-center">{day.precipChance}%</span>
+                          ) : (
+                            <span className="w-8" />
+                          )}
+                          <div className="flex items-center gap-1.5 text-xs tabular-nums">
+                            <span className="font-semibold text-gray-800 w-7 text-right">{day.high}°</span>
+                            <div className="w-12 h-1 rounded-full bg-gray-100 overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-blue-300 to-orange-400"
+                                style={{ width: `${Math.min(100, Math.max(20, ((day.high - day.low) / 40) * 100))}%` }}
+                              />
+                            </div>
+                            <span className="text-gray-400 w-7 text-right">{day.low}°</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollReveal>
 
