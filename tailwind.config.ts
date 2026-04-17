@@ -96,6 +96,14 @@ export default {
 				'ticker': {
 					'0%': { transform: 'translateX(0)' },
 					'100%': { transform: 'translateX(-50%)' }
+				},
+				'subtle-glow': {
+					'0%, 100%': { opacity: '0.35', textShadow: '0 0 0px hsl(0 0% 0% / 0)' },
+					'50%': { opacity: '0.85', textShadow: '0 0 8px hsl(0 72% 51% / 0.45)' }
+				},
+				'whisper-pulse': {
+					'0%, 100%': { opacity: '0.45' },
+					'50%': { opacity: '1' }
 				}
 			},
 			animation: {
@@ -104,7 +112,9 @@ export default {
 				'fade-up': 'fade-up 0.5s ease-out both',
 				'fade-in': 'fade-in 0.4s ease-out both',
 				'slide-up': 'slide-up 0.3s ease-out',
-				'ticker': 'ticker 30s linear infinite'
+				'ticker': 'ticker 30s linear infinite',
+				'subtle-glow': 'subtle-glow 4s ease-in-out infinite',
+				'whisper-pulse': 'whisper-pulse 3.5s ease-in-out infinite'
 			}
 		}
 	},
