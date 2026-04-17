@@ -31,6 +31,15 @@ const channels: CovcomChannel[] = [
     }),
   },
   {
+    id: 'archive-dossier',
+    aliases: ['1776', 'archive', 'dossier'],
+    resolve: () => ({
+      type: 'redirect',
+      destination: '/hidden/dossier.pdf',
+      channel: 'archive-dossier',
+    }),
+  },
+  {
     id: 'contact-channel',
     aliases: ['contact', 'signal'],
     resolve: () => ({ type: 'open-contact', channel: 'contact-channel' }),
