@@ -1,6 +1,6 @@
 export type CovcomAction =
   | { type: 'none' }
-  | { type: 'redirect'; destination: string; channel: string }
+  | { type: 'redirect'; destination: string; channel: string; glitch?: boolean }
   | { type: 'open-contact'; channel: string };
 
 export interface CovcomChannel {
@@ -37,6 +37,16 @@ const channels: CovcomChannel[] = [
       type: 'redirect',
       destination: '/hidden/dossier.pdf',
       channel: 'archive-dossier',
+    }),
+  },
+  {
+    id: 'cipher-transmission',
+    aliases: ['2087', 'cipher', 'transmission'],
+    resolve: () => ({
+      type: 'redirect',
+      destination: 'https://github.com/topherchris420/james_library',
+      channel: 'cipher-transmission',
+      glitch: true,
     }),
   },
   {

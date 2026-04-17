@@ -10,9 +10,11 @@ import { useNewsPreferences } from '@/hooks/useNewsPreferences';
 import { useDCWeather } from '@/hooks/useDCWeather';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { resolveCovcomSignal } from '@/lib/covcom';
+import { GlitchOverlay } from '@/components/GlitchOverlay';
 
 const DCNewsLanding = () => {
   const [searchValue, setSearchValue] = useState('');
+  const [glitchTarget, setGlitchTarget] = useState<string | null>(null);
   const navLinks = ['Local', 'Politics', 'Crime & Safety', 'Weather', 'Traffic', 'Sports', 'Entertainment'] as const;
   const [activeCategory, setActiveCategory] = useState<(typeof navLinks)[number]>(navLinks[0]);
   const { articles, loading } = useDCNews(activeCategory);
@@ -28,6 +30,10 @@ const DCNewsLanding = () => {
     const action = resolveCovcomSignal(searchValue);
 
     if (action.type === 'redirect') {
+      if (action.glitch) {
+        setGlitchTarget(action.destination);
+        return;
+      }
       window.location.href = action.destination;
       return;
     }
@@ -118,6 +124,12 @@ const DCNewsLanding = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-body">
+      <GlitchOverlay
+        active={glitchTarget !== null}
+        onComplete={() => {
+          if (glitchTarget) window.location.href = glitchTarget;
+        }}
+      />
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:bg-white focus:text-blue-900 focus:px-4 focus:py-2 focus:rounded-sm focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
