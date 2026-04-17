@@ -223,6 +223,20 @@ export const useDCNews = (category?: string) => {
 
   useEffect(() => {
     fetchNews();
+
+    // Auto-refresh news every 5 minutes for live updates
+    const interval = setInterval(fetchNews, 5 * 60 * 1000);
+
+    // Also refresh when the tab becomes visible again
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchNews();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [fetchNews]);
 
   const refresh = useCallback(() => {
