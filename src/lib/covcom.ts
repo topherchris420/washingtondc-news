@@ -22,6 +22,15 @@ const channels: CovcomChannel[] = [
     }),
   },
   {
+    id: 'travel-dossier',
+    aliases: ['401', 'travel', 'passage'],
+    resolve: () => ({
+      type: 'redirect',
+      destination: '/hidden/travel.pdf',
+      channel: 'travel-dossier',
+    }),
+  },
+  {
     id: 'contact-channel',
     aliases: ['contact', 'signal'],
     resolve: () => ({ type: 'open-contact', channel: 'contact-channel' }),
