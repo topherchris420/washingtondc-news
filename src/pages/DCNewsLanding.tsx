@@ -564,18 +564,26 @@ const DCNewsLanding = () => {
               <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
                 <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-red-600 pb-2 mb-4">Most Read</h3>
                 <ol className="space-y-3.5">
-                  {sidebarStories.map((story, i) => (
-                    <li key={i} className="flex items-start gap-3 group cursor-pointer">
-                      <span className={`text-2xl font-black leading-none select-all ${
-                        [0, 2, 6].includes(i) 
-                          ? 'text-red-600/30 hover:text-red-600 transition-all duration-500 animate-[subtle-glow_4s_ease-in-out_infinite] font-headline' 
-                          : 'text-gray-200'
-                      }`} style={[0, 2, 6].includes(i) ? { letterSpacing: '0.05em', animationDelay: `${i * 0.7}s` } : {}}>{i + 1}</span>
-                      <p className="text-sm text-gray-700 leading-snug group-hover:text-blue-900 transition-colors font-medium pt-0.5">
-                        {story}
-                      </p>
-                    </li>
-                  ))}
+                  {sidebarStories.map((story, i) => {
+                    const isHint = i === 0 || i === 2;
+                    return (
+                      <li key={i} className="flex items-start gap-3 group cursor-pointer">
+                        <span
+                          className={`text-2xl font-black leading-none select-all font-headline ${
+                            isHint
+                              ? 'text-red-600/40 animate-subtle-glow'
+                              : 'text-gray-200'
+                          }`}
+                          style={isHint ? { animationDelay: `${i * 0.9}s` } : undefined}
+                        >
+                          {i + 1}
+                        </span>
+                        <p className="text-sm text-gray-700 leading-snug group-hover:text-blue-900 transition-colors font-medium pt-0.5">
+                          {story}
+                        </p>
+                      </li>
+                    );
+                  })}
                 </ol>
               </div>
             </ScrollReveal>
