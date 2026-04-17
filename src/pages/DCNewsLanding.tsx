@@ -10,9 +10,11 @@ import { useNewsPreferences } from '@/hooks/useNewsPreferences';
 import { useDCWeather } from '@/hooks/useDCWeather';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { resolveCovcomSignal } from '@/lib/covcom';
+import { GlitchOverlay } from '@/components/GlitchOverlay';
 
 const DCNewsLanding = () => {
   const [searchValue, setSearchValue] = useState('');
+  const [glitchTarget, setGlitchTarget] = useState<string | null>(null);
   const navLinks = ['Local', 'Politics', 'Crime & Safety', 'Weather', 'Traffic', 'Sports', 'Entertainment'] as const;
   const [activeCategory, setActiveCategory] = useState<(typeof navLinks)[number]>(navLinks[0]);
   const { articles, loading } = useDCNews(activeCategory);
@@ -28,6 +30,10 @@ const DCNewsLanding = () => {
     const action = resolveCovcomSignal(searchValue);
 
     if (action.type === 'redirect') {
+      if (action.glitch) {
+        setGlitchTarget(action.destination);
+        return;
+      }
       window.location.href = action.destination;
       return;
     }
