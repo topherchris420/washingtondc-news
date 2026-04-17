@@ -649,12 +649,17 @@ const DCNewsLanding = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-            <p>&copy; 2026 Washington <span className="font-bold text-white">4</span> News. All rights reserved.</p>
+            <p>
+              &copy; <span className="font-semibold text-gray-300 animate-whisper-pulse select-all" style={{ animationDelay: '1.2s' }}>1776</span> Washington{' '}
+              <span className="font-bold text-white animate-whisper-pulse select-all" style={{ animationDelay: '0s' }}>4</span> News. All rights reserved.
+            </p>
             <div className="flex items-center gap-5">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-white transition-colors">Terms</a>
               <a href="#" className="hover:text-white transition-colors">Accessibility</a>
-              <span className="text-gray-700">v1.0</span>
+              <span className="text-gray-600 select-all tabular-nums">
+                v<span className="text-gray-300 animate-whisper-pulse" style={{ animationDelay: '2.4s' }}>4.0.1</span>
+              </span>
             </div>
           </div>
         </div>
