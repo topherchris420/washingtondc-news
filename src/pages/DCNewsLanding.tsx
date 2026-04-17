@@ -124,6 +124,12 @@ const DCNewsLanding = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-body">
+      <GlitchOverlay
+        active={glitchTarget !== null}
+        onComplete={() => {
+          if (glitchTarget) window.location.href = glitchTarget;
+        }}
+      />
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:bg-white focus:text-blue-900 focus:px-4 focus:py-2 focus:rounded-sm focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
