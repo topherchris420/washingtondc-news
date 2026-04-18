@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import dcMetroTrain from '@/assets/dc-metro-train.jpg';
 
 export interface NewsArticle {
   id: string;
