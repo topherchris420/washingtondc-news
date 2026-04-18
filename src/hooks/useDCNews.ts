@@ -26,7 +26,7 @@ const FALLBACK_ARTICLES: NewsArticle[] = [
     description: 'WMATA officials unveiled a $2.1 billion operating budget focused on increasing service frequency and improving reliability across all rail and bus lines.',
     content: '',
     url: 'https://www.wmata.com',
-    image: 'https://images.unsplash.com/photo-1527295234880-99f6cae47026?w=600&h=400&fit=crop',
+    image: dcMetroTrain,
     publishedAt: new Date().toISOString(),
     source: { name: 'Washington Metro Report', url: 'https://www.wmata.com' }
   },
