@@ -113,7 +113,7 @@ const FALLBACK_ARTICLES: NewsArticle[] = [
     description: 'Metro announces expanded late-night service on Silver Line to support growing ridership to Dulles and Tysons.',
     content: '',
     url: 'https://www.wmata.com',
-    image: 'https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?w=600&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1581262177000-8139a463e531?w=600&h=400&fit=crop',
     publishedAt: new Date(Date.now() - 3600000).toISOString(),
     source: { name: 'WMATA', url: 'https://www.wmata.com' }
   },
