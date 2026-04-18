@@ -98,12 +98,12 @@ export default {
 					'100%': { transform: 'translateX(-50%)' }
 				},
 				'subtle-glow': {
-					'0%, 100%': { opacity: '0.35', textShadow: '0 0 0px hsl(0 0% 0% / 0)' },
-					'50%': { opacity: '0.85', textShadow: '0 0 8px hsl(0 72% 51% / 0.45)' }
+					'0%, 100%': { opacity: '0.5', textShadow: '0 0 2px hsl(0 72% 51% / 0.2)' },
+					'50%': { opacity: '1', textShadow: '0 0 14px hsl(0 72% 51% / 0.7)' }
 				},
 				'whisper-pulse': {
-					'0%, 100%': { opacity: '0.45' },
-					'50%': { opacity: '1' }
+					'0%, 100%': { opacity: '0.55', textShadow: '0 0 0px hsl(0 0% 100% / 0)' },
+					'50%': { opacity: '1', textShadow: '0 0 10px hsl(0 0% 100% / 0.5)' }
 				}
 			},
 			animation: {
