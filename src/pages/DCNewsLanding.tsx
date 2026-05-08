@@ -314,7 +314,13 @@ const DCNewsLanding = () => {
                     >
                       <div className="h-40 bg-gray-100 overflow-hidden rounded-t-lg">
                         {article.image ? (
-                          <img src={article.image} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                          <img
+                            src={article.image}
+                            alt=""
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            loading="lazy"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
                         ) : (
                           <div className="h-full w-full flex items-center justify-center text-xs text-gray-400 bg-gradient-to-br from-gray-50 to-gray-100">
                             <ImageOff className="h-4 w-4 mr-1.5 opacity-50" /> No image
@@ -366,7 +372,13 @@ const DCNewsLanding = () => {
                     >
                       {article.image && (
                         <div className="w-28 h-28 shrink-0 overflow-hidden rounded-l-lg">
-                          <img src={article.image} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                          <img
+                            src={article.image}
+                            alt=""
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            loading="lazy"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
                         </div>
                       )}
                       <div className="p-3 flex flex-col justify-center">
