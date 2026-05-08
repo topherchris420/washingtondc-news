@@ -1,6 +1,7 @@
-import { Clock, Bookmark, ArrowUpRight } from 'lucide-react';
+import { Clock, Bookmark, ArrowUpRight, ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { NewsArticle } from '@/hooks/useDCNews';
+import { useState } from 'react';
 
 interface FeaturedStoryCardProps {
   article: NewsArticle;
