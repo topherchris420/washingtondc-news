@@ -251,6 +251,33 @@ const DCNewsLanding = () => {
         </div>
       </div>
 
+      {/* Mobile Hint — Most Read teaser above the fold */}
+      <div className="lg:hidden bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2">Most Read</h3>
+          <ol className="space-y-2">
+            {sidebarStories.slice(0, 3).map((story, i) => {
+              const isHint = i === 0 || i === 2;
+              return (
+                <li key={i} className="flex items-start gap-2.5">
+                  <span
+                    className={`text-lg font-black leading-none select-all font-headline ${
+                      isHint ? 'text-red-600/40 animate-subtle-glow' : 'text-gray-200'
+                    }`}
+                    style={isHint ? { animationDelay: `${i * 0.9}s` } : undefined}
+                  >
+                    {i + 1}
+                  </span>
+                  <p className="text-xs text-gray-700 leading-snug font-medium pt-0.5">
+                    {story}
+                  </p>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </div>
+
       {/* Main Content */}
       <main id="main-content" className="max-w-7xl mx-auto px-4 py-8" tabIndex={-1}>
         <div className="grid lg:grid-cols-3 gap-8">
