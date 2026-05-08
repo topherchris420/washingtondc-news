@@ -1,4 +1,5 @@
 import { Clock, ExternalLink, ImageOff } from 'lucide-react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export type NewsCardVariant = 'featured' | 'standard' | 'compact';
@@ -47,6 +48,7 @@ export const NewsCard = ({
   const typeStyles = typographyByVariant[variant];
   const isFeatured = variant === 'featured';
   const showThumbnail = !isFeatured;
+  const [imageError, setImageError] = useState(false);
 
   return (
     <a
@@ -74,8 +76,14 @@ export const NewsCard = ({
 
       {showThumbnail && (
         <div className="mb-3 overflow-hidden border border-gray-100 bg-gray-50">
-          {thumbnail ? (
-            <img src={thumbnail} alt="" className="h-28 w-full object-cover" loading="lazy" />
+          {thumbnail && !imageError ? (
+            <img
+              src={thumbnail}
+              alt=""
+              className="h-28 w-full object-cover"
+              loading="lazy"
+              onError={() => setImageError(true)}
+            />
           ) : (
             <div className="h-28 w-full flex items-center justify-center gap-2 text-xs text-gray-400 bg-gradient-to-br from-gray-50 to-gray-100">
               <ImageOff className="h-3.5 w-3.5" />
