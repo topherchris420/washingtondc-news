@@ -22,7 +22,7 @@ export const FeaturedStoryCard = ({ article, formatTime }: FeaturedStoryCardProp
           alt={article.title}
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
           fallbackText="District Briefing"
-          fallbackClassName="items-end justify-start p-5 text-white/85 bg-gradient-to-br from-blue-900 via-blue-800 to-slate-700"
+          fallbackVariant="gradient"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
         <div className="absolute left-5 top-5 rounded-md bg-white/95 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-900 shadow-sm backdrop-blur-sm">
