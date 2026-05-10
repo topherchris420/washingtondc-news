@@ -1,5 +1,5 @@
-import { Clock, ExternalLink, ImageOff } from 'lucide-react';
-import { useState } from 'react';
+import { Clock, ExternalLink } from 'lucide-react';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { cn } from '@/lib/utils';
 
 export type NewsCardVariant = 'featured' | 'standard' | 'compact';
