@@ -9,8 +9,6 @@ interface FeaturedStoryCardProps {
 }
 
 export const FeaturedStoryCard = ({ article, formatTime }: FeaturedStoryCardProps) => {
-  const [imageError, setImageError] = useState(false);
-
   return (
     <article className="group bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-xl motion-safe:focus-within:-translate-y-0.5 motion-safe:focus-within:shadow-xl motion-reduce:transition-none">
       <a
@@ -19,18 +17,13 @@ export const FeaturedStoryCard = ({ article, formatTime }: FeaturedStoryCardProp
         rel="noopener noreferrer"
         className="relative block h-64 md:h-80 bg-gradient-to-br from-blue-900 via-blue-800 to-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
       >
-        {article.image && !imageError ? (
-          <img
-            src={article.image}
-            alt={article.title}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className="flex h-full w-full items-end p-5 text-white/85">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em]">District Briefing</span>
-          </div>
-        )}
+        <ImageWithFallback
+          src={article.image}
+          alt={article.title}
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+          fallbackText="District Briefing"
+          fallbackClassName="items-end justify-start p-5 text-white/85 bg-gradient-to-br from-blue-900 via-blue-800 to-slate-700"
+        />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
         <div className="absolute left-5 top-5 rounded-md bg-white/95 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-900 shadow-sm backdrop-blur-sm">
           {article.source.name}
