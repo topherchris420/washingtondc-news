@@ -3,8 +3,9 @@ import dc4Logo from '@/assets/dc4-news-logo.png';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Clock, Cloud, Thermometer, Wind, ExternalLink, Mail, X, ImageOff, Droplets, Sun, Sunrise, Sunset, Eye, Gauge, ChevronRight } from 'lucide-react';
+import { Search, Clock, Cloud, Thermometer, Wind, ExternalLink, Mail, X, Droplets, Sun, Sunrise, Sunset, Eye, Gauge, ChevronRight } from 'lucide-react';
 import { FeaturedStoryCard } from '@/components/FeaturedStoryCard';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { useDCNews } from '@/hooks/useDCNews';
 import { useNewsPreferences } from '@/hooks/useNewsPreferences';
 import { useDCWeather } from '@/hooks/useDCWeather';
@@ -313,19 +314,13 @@ const DCNewsLanding = () => {
                       onClick={() => handleArticleOpen(article)}
                     >
                       <div className="h-40 bg-gray-100 overflow-hidden rounded-t-lg">
-                        {article.image ? (
-                          <img
-                            src={article.image}
-                            alt=""
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            loading="lazy"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                          />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center text-xs text-gray-400 bg-gradient-to-br from-gray-50 to-gray-100">
-                            <ImageOff className="h-4 w-4 mr-1.5 opacity-50" /> No image
-                          </div>
-                        )}
+                        <ImageWithFallback
+                          src={article.image}
+                          alt=""
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                          fallbackText="No image"
+                        />
                       </div>
                       <div className={densityCardClass}>
                         <div className="flex items-start justify-between gap-3 mb-2">
@@ -370,17 +365,15 @@ const DCNewsLanding = () => {
                       className="bg-white rounded-lg border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300 group cursor-pointer flex gap-4 overflow-hidden shadow-sm"
                       onClick={() => handleArticleOpen(article)}
                     >
-                      {article.image && (
-                        <div className="w-28 h-28 shrink-0 overflow-hidden rounded-l-lg">
-                          <img
-                            src={article.image}
-                            alt=""
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            loading="lazy"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                          />
-                        </div>
-                      )}
+                      <div className="w-28 h-28 shrink-0 overflow-hidden rounded-l-lg">
+                        <ImageWithFallback
+                          src={article.image}
+                          alt=""
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                          fallbackText="No image"
+                        />
+                      </div>
                       <div className="p-3 flex flex-col justify-center">
                         <h4 className="text-sm font-bold text-gray-900 mb-1.5 leading-snug group-hover:text-blue-900 transition-colors font-headline">
                           {article.title}
