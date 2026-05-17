@@ -9,6 +9,21 @@ const NotFound = () => {
       "404 Error: User attempted to access non-existent route:",
       location.pathname
     );
+
+    const prevTitle = document.title;
+    const descTag = document.querySelector('meta[name="description"]');
+    const prevDesc = descTag?.getAttribute('content') ?? '';
+
+    document.title = 'Page Not Found | DC4 News';
+    descTag?.setAttribute(
+      'content',
+      "The page you're looking for doesn't exist. Return to DC4 News for the latest Washington DC local news, weather, and politics."
+    );
+
+    return () => {
+      document.title = prevTitle;
+      descTag?.setAttribute('content', prevDesc);
+    };
   }, [location.pathname]);
 
   return (

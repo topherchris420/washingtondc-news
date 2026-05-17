@@ -166,6 +166,7 @@ const DCNewsLanding = () => {
       <header className="bg-white border-b-[3px] border-blue-900 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-5">
           <div className="flex items-center justify-between gap-4">
+            <h1 className="sr-only">DC4 News — Washington D.C. Local News</h1>
             <img src={dc4Logo} alt="DC4 News" className="h-10 md:h-12 w-auto" />
             <form onSubmit={handleSubmit} className="flex items-center gap-2">
               <div className="relative">
@@ -173,6 +174,7 @@ const DCNewsLanding = () => {
                 <Input
                   type="text"
                   placeholder="Search stories..."
+                  aria-label="Search stories"
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
                   className="pl-8 h-9 w-36 md:w-52 text-sm border-gray-200 rounded-md bg-gray-50 focus:bg-white transition-colors"
@@ -219,7 +221,7 @@ const DCNewsLanding = () => {
           <div className="md:hidden space-y-2">
             <div>
               <Select value={activeCategory} onValueChange={(value) => setActiveCategory(value as (typeof navLinks)[number])}>
-                <SelectTrigger className="h-10 border-blue-700 bg-blue-950 text-white rounded-md focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-900">
+                <SelectTrigger aria-label="Select news category" className="h-10 border-blue-700 bg-blue-950 text-white rounded-md focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-900">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -255,7 +257,7 @@ const DCNewsLanding = () => {
       {/* Mobile Hint — Most Read teaser above the fold */}
       <div className="lg:hidden bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 py-3">
-          <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2">Most Read</h3>
+          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2">Most Read</h2>
           <ol className="space-y-2">
             {sidebarStories.slice(0, 3).map((story, i) => {
               const isHint = i === 0 || i === 2;
@@ -397,7 +399,7 @@ const DCNewsLanding = () => {
           <aside className="space-y-5">
             <ScrollReveal>
               <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-blue-900 pb-2 mb-4">Your Preferences</h3>
+                <h2 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-blue-900 pb-2 mb-4">Your Preferences</h2>
                 <div className="space-y-3 text-xs">
                   <div>
                     <p className="font-semibold text-gray-700 mb-1.5">Reading density</p>
@@ -437,7 +439,7 @@ const DCNewsLanding = () => {
 
             <ScrollReveal delay={60}>
               <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-emerald-600 pb-2 mb-4">Recommended</h3>
+                <h2 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-emerald-600 pb-2 mb-4">Recommended</h2>
                 {(() => {
                   const recommended = forYouArticles.length > 0 ? forYouArticles : articles.slice(2, 5);
                   return recommended.length > 0 ? (
@@ -458,7 +460,7 @@ const DCNewsLanding = () => {
 
             <ScrollReveal delay={80}>
               <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-violet-600 pb-2 mb-4">Latest Updates</h3>
+                <h2 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-violet-600 pb-2 mb-4">Latest Updates</h2>
                 {(() => {
                   const latestItems = continueReading.length > 0
                     ? continueReading
@@ -490,7 +492,7 @@ const DCNewsLanding = () => {
                 {/* Weather Header */}
                 <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-5">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-xs font-black uppercase tracking-wider opacity-80">Washington, DC Weather</h3>
+                    <h2 className="text-xs font-black uppercase tracking-wider opacity-80">Washington, DC Weather</h2>
                     <span className="text-[10px] opacity-60">Updated live</span>
                   </div>
                   <div className="flex items-center justify-between mt-3">
@@ -607,7 +609,7 @@ const DCNewsLanding = () => {
             {/* Most Read */}
             <ScrollReveal delay={100}>
               <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-red-600 pb-2 mb-4">Most Read</h3>
+                <h2 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-red-600 pb-2 mb-4">Most Read</h2>
                 <ol className="space-y-3.5">
                   {sidebarStories.map((story, i) => {
                     const isHint = i === 0 || i === 2;
@@ -636,7 +638,7 @@ const DCNewsLanding = () => {
             {/* Contact CTA */}
             <ScrollReveal delay={200}>
               <div className="bg-gradient-to-br from-red-600 to-red-700 text-white p-5 rounded-lg shadow-md">
-                <h3 className="text-xs font-black uppercase tracking-wider mb-2">Get In Touch</h3>
+                <h2 className="text-xs font-black uppercase tracking-wider mb-2">Get In Touch</h2>
                 <p className="text-xs text-red-100 mb-4">Have a story tip or want to connect?</p>
                 <a
                   href="mailto:ciao_chris@proton.me"

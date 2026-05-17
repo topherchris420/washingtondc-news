@@ -31,9 +31,9 @@ export const FeaturedStoryCard = ({ article, formatTime }: FeaturedStoryCardProp
       </a>
 
       <div className="p-6 md:p-8">
-        <h1 className="max-w-2xl text-3xl md:text-4xl font-black text-gray-900 leading-[1.1] font-headline">
+        <h2 className="max-w-2xl text-3xl md:text-4xl font-black text-gray-900 leading-[1.1] font-headline">
           {article.title}
-        </h1>
+        </h2>
 
         <p className="mt-4 max-w-2xl text-base text-gray-600 leading-relaxed line-clamp-3">
           {article.description}

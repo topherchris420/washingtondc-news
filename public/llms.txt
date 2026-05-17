@@ -1,0 +1,9 @@
+# DC4 News
+
+> Washington, D.C. local news covering politics, weather, traffic, sports, and entertainment.
+
+DC4 News is an independent local news landing page for the Washington, D.C. metro area. Live headlines are aggregated from local sources, alongside live weather for the District.
+
+## Pages
+
+- [Home](/): Latest D.C. headlines, breaking news ticker, live weather, and Most Read stories.
