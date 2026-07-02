@@ -1,33 +1,389 @@
-import { useState } from 'react'; // live data v2
+import { useMemo, useState } from 'react';
+import {
+  ChevronRight,
+  Clock,
+  Cloud,
+  Droplets,
+  ExternalLink,
+  Gauge,
+  Landmark,
+  Mail,
+  MapPin,
+  Radio,
+  Search,
+  ShieldCheck,
+  Sunrise,
+  Sunset,
+  Thermometer,
+  TrainFront,
+  Wind,
+  X,
+} from 'lucide-react';
+
 import dc4Logo from '@/assets/dc4-news-logo.png';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Clock, Cloud, Thermometer, Wind, ExternalLink, Mail, X, Droplets, Sun, Sunrise, Sunset, Eye, Gauge, ChevronRight } from 'lucide-react';
-import { FeaturedStoryCard } from '@/components/FeaturedStoryCard';
-import { ImageWithFallback } from '@/components/ImageWithFallback';
-import { useDCNews } from '@/hooks/useDCNews';
-import { useNewsPreferences } from '@/hooks/useNewsPreferences';
-import { useDCWeather } from '@/hooks/useDCWeather';
-import { ScrollReveal } from '@/components/ScrollReveal';
-import { resolveCovcomSignal } from '@/lib/covcom';
 import { GlitchOverlay } from '@/components/GlitchOverlay';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
+import { ScrollReveal } from '@/components/ScrollReveal';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useDCNews, type NewsArticle } from '@/hooks/useDCNews';
+import { useDCWeather } from '@/hooks/useDCWeather';
+import { useNewsPreferences } from '@/hooks/useNewsPreferences';
+import { cn } from '@/lib/utils';
+import { resolveCovcomSignal } from '@/lib/covcom';
+
+type SectionName =
+  | 'Local'
+  | 'Politics'
+  | 'Crime & Safety'
+  | 'Weather'
+  | 'Traffic'
+  | 'Sports'
+  | 'Entertainment';
+
+const navLinks: SectionName[] = [
+  'Local',
+  'Politics',
+  'Crime & Safety',
+  'Weather',
+  'Traffic',
+  'Sports',
+  'Entertainment',
+];
+
+const neighborhoodLinks = ['Capitol Hill', 'Georgetown', 'Anacostia', 'Shaw', 'Dupont Circle', 'Petworth'];
+
+const civicBriefs = [
+  'DC Council committee hearings resume at 10:00 AM.',
+  'Metro advisories remain active on select evening trips.',
+  'DDOT is collecting comments on curb access and bus priority corridors.',
+  'Ward public safety listening sessions continue this week.',
+];
+
+const mostReadStories = [
+  'Council advances housing measure after late-night markup',
+  'Metro reports Green Line delays after signal inspection',
+  'Where street closures will affect the weekend race route',
+  'New restaurant openings around Union Market and H Street',
+  'How property tax appeals are moving through the city this month',
+];
+
+const sectionKicker: Record<SectionName, string> = {
+  Local: 'District Desk',
+  Politics: 'Council Watch',
+  'Crime & Safety': 'Public Safety',
+  Weather: 'Weather Desk',
+  Traffic: 'Metro & Roads',
+  Sports: 'DC Sports',
+  Entertainment: 'Arts & Life',
+};
+
+const getArticleCategory = (title: string, sourceName: string): SectionName => {
+  const content = (title + ' ' + sourceName).toLowerCase();
+
+  if (content.includes('police') || content.includes('security') || content.includes('crime')) {
+    return 'Crime & Safety';
+  }
+  if (content.includes('weather') || content.includes('bloom')) return 'Weather';
+  if (
+    content.includes('metro') ||
+    content.includes('airport') ||
+    content.includes('traffic') ||
+    content.includes('ddot') ||
+    content.includes('wmata')
+  ) {
+    return 'Traffic';
+  }
+  if (
+    content.includes('council') ||
+    content.includes('capitol') ||
+    content.includes('budget') ||
+    content.includes('congress')
+  ) {
+    return 'Politics';
+  }
+  if (content.includes('nationals') || content.includes('commanders') || content.includes('sports')) {
+    return 'Sports';
+  }
+  if (
+    content.includes('museum') ||
+    content.includes('zoo') ||
+    content.includes('festival') ||
+    content.includes('kennedy')
+  ) {
+    return 'Entertainment';
+  }
+
+  return 'Local';
+};
+
+const formatTime = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffHours < 1) return 'Just now';
+    if (diffHours === 1) return '1 hour ago';
+    if (diffHours < 24) return diffHours + ' hours ago';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return diffDays + ' days ago';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return dateString;
+  }
+};
+
+const getReadTime = (article: NewsArticle) => {
+  const words = (article.title + ' ' + article.description + ' ' + article.content).split(/\s+/).length;
+  return Math.max(2, Math.ceil(words / 180)) + ' min read';
+};
+
+const today = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const SectionTitle = ({ label, title }: { label: string; title: string }) => (
+  <div className="mb-4 border-b-2 border-neutral-950 pb-2">
+    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-800">{label}</p>
+    <h2 className="font-headline text-2xl font-bold leading-none text-neutral-950">{title}</h2>
+  </div>
+);
+
+const StoryCard = ({
+  article,
+  onOpen,
+  onDismiss,
+}: {
+  article: NewsArticle;
+  onOpen: (article: NewsArticle) => void;
+  onDismiss?: (storyId: string) => void;
+}) => {
+  const category = getArticleCategory(article.title, article.source.name);
+
+  return (
+    <article className="group relative h-full border border-neutral-200 bg-white">
+      <button
+        type="button"
+        onClick={() => onOpen(article)}
+        className="flex h-full w-full flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-4"
+      >
+        <ImageWithFallback
+          src={article.image}
+          alt=""
+          className="aspect-[16/10] w-full border-b border-neutral-200 object-cover grayscale-[12%] transition duration-500 group-hover:grayscale-0"
+          loading="lazy"
+          fallbackText="District Briefing"
+          fallbackVariant="gradient"
+        />
+        <div className="flex flex-1 flex-col p-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[11px] font-black uppercase tracking-[0.18em] text-red-800">
+              {category}
+            </span>
+            <span className="text-[11px] font-semibold text-neutral-500">{getReadTime(article)}</span>
+          </div>
+          <h3 className="mt-2 font-headline text-xl font-bold leading-tight text-neutral-950 group-hover:text-red-800">
+            {article.title}
+          </h3>
+          <p className="mt-2 line-clamp-3 text-sm leading-6 text-neutral-600">{article.description}</p>
+          <div className="mt-auto flex items-center gap-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+            <Clock className="h-3 w-3" />
+            <span>{formatTime(article.publishedAt)}</span>
+            <ExternalLink className="ml-auto h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-70" />
+          </div>
+        </div>
+      </button>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDismiss(article.id);
+          }}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center border border-white/70 bg-white/90 text-neutral-500 shadow-sm transition hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950"
+          aria-label="Dismiss story"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </article>
+  );
+};
+
+const BriefStory = ({ article, onOpen }: { article: NewsArticle; onOpen: (article: NewsArticle) => void }) => {
+  const category = getArticleCategory(article.title, article.source.name);
+
+  return (
+    <article className="group border-b border-neutral-200 pb-4 last:border-b-0 last:pb-0">
+      <button
+        type="button"
+        onClick={() => onOpen(article)}
+        className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-4"
+      >
+        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-red-800">{category}</p>
+        <h3 className="mt-1 font-headline text-lg font-bold leading-tight text-neutral-950 group-hover:text-red-800">
+          {article.title}
+        </h3>
+        <p className="mt-2 line-clamp-2 text-sm leading-6 text-neutral-600">{article.description}</p>
+        <div className="mt-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+          <span>{article.source.name}</span>
+          <span aria-hidden="true">/</span>
+          <span>{formatTime(article.publishedAt)}</span>
+        </div>
+      </button>
+    </article>
+  );
+};
+
+const RailStory = ({ article, onOpen }: { article: NewsArticle; onOpen: (article: NewsArticle) => void }) => {
+  const category = getArticleCategory(article.title, article.source.name);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(article)}
+      className="group grid w-full grid-cols-[72px_1fr] gap-3 border-b border-neutral-200 py-3 text-left last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-4"
+    >
+      <ImageWithFallback
+        src={article.image}
+        alt=""
+        className="h-[72px] w-[72px] border border-neutral-200 object-cover grayscale-[15%]"
+        loading="lazy"
+        fallbackText="DC4"
+        fallbackVariant="text"
+      />
+      <span>
+        <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-neutral-500">
+          {category}
+        </span>
+        <span className="mt-1 block text-sm font-bold leading-snug text-neutral-950 group-hover:text-red-800">
+          {article.title}
+        </span>
+        <span className="mt-1 block text-[11px] text-neutral-500">{formatTime(article.publishedAt)}</span>
+      </span>
+    </button>
+  );
+};
+
+const WeatherMetric = ({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Wind;
+  label: string;
+  value: string;
+}) => (
+  <div className="bg-white p-3">
+    <div className="flex items-center gap-2 text-neutral-500">
+      <Icon className="h-4 w-4" />
+      <span className="text-[10px] font-black uppercase tracking-[0.16em]">{label}</span>
+    </div>
+    <p className="mt-1 text-sm font-bold text-neutral-950">{value}</p>
+  </div>
+);
+
+const StatusRow = ({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof TrainFront;
+  label: string;
+  value: string;
+}) => (
+  <div className="flex items-start gap-3 border-b border-neutral-200 pb-3 last:border-b-0 last:pb-0">
+    <Icon className="mt-0.5 h-4 w-4 text-red-800" />
+    <div>
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold leading-5 text-neutral-900">{value}</p>
+    </div>
+  </div>
+);
+
+const FooterList = ({ title, items }: { title: string; items: string[] }) => (
+  <div>
+    <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-white">{title}</h3>
+    <ul className="mt-4 space-y-2 text-sm text-neutral-400">
+      {items.map((item) => (
+        <li key={item}>
+          <a href="#" className="hover:text-white hover:underline">
+            {item}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
 const DCNewsLanding = () => {
   const [searchValue, setSearchValue] = useState('');
   const [glitchTarget, setGlitchTarget] = useState<string | null>(null);
-  const navLinks = ['Local', 'Politics', 'Crime & Safety', 'Weather', 'Traffic', 'Sports', 'Entertainment'] as const;
-  const [activeCategory, setActiveCategory] = useState<(typeof navLinks)[number]>(navLinks[0]);
-  const { articles, loading } = useDCNews(activeCategory);
+  const [activeCategory, setActiveCategory] = useState<SectionName>('Local');
+
+  const { articles, loading, error } = useDCNews();
+  const { weather } = useDCWeather();
   const {
-    selectedCategory, dismissedStories, dismissStory, restoreDismissedStories,
-    readingDensity, setReadingDensity, viewedCategories, continueReading,
-    trackArticleView, clearContinueReading,
+    selectedCategory,
+    setSelectedCategory,
+    dismissedStories,
+    dismissStory,
+    restoreDismissedStories,
+    readingDensity,
+    setReadingDensity,
+    viewedCategories,
+    continueReading,
+    trackArticleView,
+    clearContinueReading,
   } = useNewsPreferences();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const visibleArticles = useMemo(
+    () => articles.filter((article) => !dismissedStories.includes(article.id)),
+    [articles, dismissedStories],
+  );
 
+  const sectionArticles = useMemo(
+    () => visibleArticles.filter((article) => getArticleCategory(article.title, article.source.name) === activeCategory),
+    [activeCategory, visibleArticles],
+  );
+  const orderedArticles = useMemo(() => {
+    const lead = sectionArticles[0] || visibleArticles[0];
+    const rest = visibleArticles.filter((article) => article.id !== lead?.id);
+    return lead ? [lead, ...rest] : [];
+  }, [sectionArticles, visibleArticles]);
+
+  const leadArticle = orderedArticles[0];
+  const secondaryArticles = orderedArticles.slice(1, 5);
+  const cardArticles = orderedArticles.slice(5, 11);
+  const moreArticles = orderedArticles.slice(11, 17);
+
+  const recommendedArticles = useMemo(() => {
+    const personalized = articles
+      .filter((article) => !dismissedStories.includes(article.id))
+      .filter((article) => viewedCategories.includes(getArticleCategory(article.title, article.source.name)))
+      .slice(0, 4);
+
+    return personalized.length > 0 ? personalized : articles.slice(2, 6);
+  }, [articles, dismissedStories, viewedCategories]);
+
+  const handleCategoryChange = (category: SectionName) => {
+    setActiveCategory(category);
+    setSelectedCategory(category);
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
     const action = resolveCovcomSignal(searchValue);
 
     if (action.type === 'redirect') {
@@ -44,43 +400,7 @@ const DCNewsLanding = () => {
     }
   };
 
-  const sidebarStories = [
-    "Council approves new bike lane network for NW",
-    "Nationals announce spring training roster changes",
-    "Local chef wins James Beard Award nomination",
-    "New art installation opens at Union Market",
-    "Weekend road closures planned for Marathon prep",
-  ];
-
-  const getArticleCategory = (title: string, sourceName: string) => {
-    const content = `${title} ${sourceName}`.toLowerCase();
-
-    if (content.includes('police') || content.includes('security') || content.includes('crime')) return 'Crime & Safety';
-    if (content.includes('weather') || content.includes('bloom')) return 'Weather';
-    if (content.includes('metro') || content.includes('airport') || content.includes('traffic')) return 'Traffic';
-    if (content.includes('council') || content.includes('capitol') || content.includes('budget')) return 'Politics';
-    if (content.includes('nationals') || content.includes('sports')) return 'Sports';
-    if (content.includes('museum') || content.includes('zoo') || content.includes('festival')) return 'Entertainment';
-
-    return 'Local';
-  };
-
-  const visibleArticles = articles
-    .filter((article) => !dismissedStories.includes(article.id))
-    .filter((article) => selectedCategory === 'All' || getArticleCategory(article.title, article.source.name) === selectedCategory);
-
-  const breakingArticle = articles[0];
-  const gridArticles = visibleArticles.slice(1, 5);
-  const moreArticles = visibleArticles.slice(5, 9);
-
-  const forYouArticles = articles
-    .filter((article) => !dismissedStories.includes(article.id))
-    .filter((article) => viewedCategories.includes(getArticleCategory(article.title, article.source.name)))
-    .slice(0, 3);
-
-  const densityCardClass = readingDensity === 'compact' ? 'p-3' : 'p-5';
-
-  const handleArticleOpen = (article: (typeof articles)[number]) => {
+  const handleArticleOpen = (article: NewsArticle) => {
     trackArticleView({
       id: article.id,
       title: article.title,
@@ -89,121 +409,96 @@ const DCNewsLanding = () => {
       category: getArticleCategory(article.title, article.source.name),
     });
 
-    window.open(article.url, '_blank');
+    window.open(article.url, '_blank', 'noopener,noreferrer');
   };
-
-  // Format published time
-  const formatTime = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffDays = Math.floor(diffHours / 24);
-
-      if (diffHours < 1) return 'Just now';
-      if (diffHours === 1) return '1 hour ago';
-      if (diffHours < 24) return `${diffHours} hours ago`;
-      if (diffDays === 1) return 'Yesterday';
-      if (diffDays < 7) return `${diffDays} days ago`;
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    } catch {
-      return dateString;
-    }
-  };
-
-  // Get current date
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-
-  // Live weather data
-  const { weather } = useDCWeather();
 
   return (
-    <div className="min-h-screen bg-gray-50 font-body">
+    <div className="min-h-screen bg-[#f4f1ea] text-neutral-950 antialiased">
       <GlitchOverlay
         active={glitchTarget !== null}
         onComplete={() => {
           if (glitchTarget) window.location.href = glitchTarget;
         }}
       />
+
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:bg-white focus:text-blue-900 focus:px-4 focus:py-2 focus:rounded-sm focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:bg-white focus:px-4 focus:py-2 focus:text-neutral-950 focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-neutral-950"
       >
         Skip to main content
       </a>
-
-      {/* Top Bar */}
-      <div className="bg-blue-950 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between text-xs tracking-wide">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 font-medium">{weather.icon} {weather.temp}°F</span>
-            <span className="flex items-center gap-1.5 font-medium"><Cloud className="h-3 w-3 opacity-70" /> {weather.condition}</span>
-            <span className="hidden sm:flex items-center gap-1.5 text-blue-300">Feels {weather.feelsLike}°</span>
-            <span className="hidden md:flex items-center gap-1.5 font-medium"><Wind className="h-3 w-3 opacity-70" /> {weather.wind}</span>
-            <span className="hidden lg:flex items-center gap-1.5 font-medium"><Droplets className="h-3 w-3 opacity-70" /> {weather.humidity}%</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:inline text-blue-200">{today}</span>
-            <span className="text-blue-500 hidden sm:inline">|</span>
-            <span className="text-red-400 font-bold text-[11px] tracking-widest flex items-center gap-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-              </span>
-              LIVE
+      <div className="border-b border-neutral-300 bg-neutral-950 text-white">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] md:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-red-300">
+              <Radio className="h-3.5 w-3.5" /> Live Desk
             </span>
+            <span className="hidden text-neutral-400 sm:inline">Washington, District of Columbia</span>
+            <span className="hidden truncate text-neutral-300 lg:inline">{today}</span>
+          </div>
+          <div className="flex items-center gap-3 whitespace-nowrap text-neutral-300">
+            <span className="inline-flex items-center gap-1.5">
+              <Cloud className="h-3.5 w-3.5" /> {weather.condition}
+            </span>
+            <span>{weather.temp}&deg;F</span>
+            <span className="hidden sm:inline">Wind {weather.wind}</span>
           </div>
         </div>
       </div>
 
-      {/* Masthead */}
-      <header className="bg-white border-b-[3px] border-blue-900 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-5">
-          <div className="flex items-center justify-between gap-4">
-            <h1 className="sr-only">DC4 News — Washington D.C. Local News</h1>
-            <img src={dc4Logo} alt="DC4 News" className="h-10 md:h-12 w-auto" />
-            <form onSubmit={handleSubmit} className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+      <header className="bg-[#fbfaf7]">
+        <div className="mx-auto max-w-[1440px] px-4 py-5 md:px-6 md:py-7">
+          <div className="grid gap-5 lg:grid-cols-[1fr_auto_1fr] lg:items-end">
+            <div className="hidden text-xs leading-5 text-neutral-600 lg:block">
+              <p className="font-black uppercase tracking-[0.18em] text-neutral-950">Morning Edition</p>
+              <p>Independent local reporting for residents, commuters, and civic obsessives.</p>
+            </div>
+
+            <div className="text-center">
+              <h1 className="sr-only">DC4 News - Washington DC Local News</h1>
+              <img src={dc4Logo} alt="DC4 News" className="mx-auto h-12 w-auto md:h-16" />
+              <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.32em] text-neutral-600">
+                Local News / Politics / Weather / Transit
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex items-center justify-center gap-2 lg:justify-end">
+              <label className="relative block w-full max-w-sm lg:max-w-xs">
+                <span className="sr-only">Search DC4 News</span>
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
                 <Input
                   type="text"
-                  placeholder="Search stories..."
-                  aria-label="Search stories"
                   value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  className="pl-8 h-9 w-36 md:w-52 text-sm border-gray-200 rounded-md bg-gray-50 focus:bg-white transition-colors"
+                  onChange={(event) => setSearchValue(event.target.value)}
+                  placeholder="Search, tips, signals..."
+                  className="h-10 rounded-none border-neutral-400 bg-white pl-9 text-sm focus-visible:ring-neutral-950"
                 />
-              </div>
-              <Button type="submit" size="sm" className="h-9 bg-blue-900 hover:bg-blue-800 rounded-md text-xs px-4 font-semibold tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-700">
-                Go
-              </Button>
+              </label>
+              <button
+                type="submit"
+                className="h-10 border border-neutral-950 bg-neutral-950 px-4 text-xs font-black uppercase tracking-[0.16em] text-white transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2"
+              >
+                Search
+              </button>
             </form>
           </div>
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-blue-900 text-white sticky top-0 z-50 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-2.5 md:py-2">
-          <div className="hidden md:flex items-center justify-between gap-4">
-            <div className="inline-flex items-center gap-0.5 rounded-full border border-blue-700/50 bg-blue-950/60 p-1">
+      <nav className="sticky top-0 z-40 border-y-2 border-neutral-950 bg-[#fbfaf7]/95 backdrop-blur">
+        <div className="mx-auto max-w-[1440px] px-4 md:px-6">
+          <div className="hidden h-12 items-center justify-between lg:flex">
+            <div className="flex h-full items-center">
               {navLinks.map((link) => (
                 <button
                   key={link}
                   type="button"
-                  onClick={() => setActiveCategory(link)}
+                  onClick={() => handleCategoryChange(link)}
                   aria-pressed={activeCategory === link}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-900 ${
-                    activeCategory === link
-                      ? 'bg-white text-blue-900 shadow-md'
-                      : 'text-blue-100 hover:bg-white/10 hover:text-white'
-                  }`}
+                  className={cn(
+                    'h-full border-r border-neutral-300 px-4 text-xs font-black uppercase tracking-[0.14em] transition first:border-l hover:bg-neutral-950 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-neutral-950',
+                    activeCategory === link ? 'bg-neutral-950 text-white' : 'text-neutral-800',
+                  )}
                 >
                   {link}
                 </button>
@@ -211,503 +506,356 @@ const DCNewsLanding = () => {
             </div>
             <a
               href="mailto:ciao_chris@proton.me"
-              className="px-5 py-2.5 text-sm font-bold bg-red-600 hover:bg-red-500 transition-all duration-200 flex items-center gap-2 whitespace-nowrap rounded-md shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+              className="inline-flex h-full items-center gap-2 border-x border-neutral-300 px-4 text-xs font-black uppercase tracking-[0.14em] text-red-800 transition hover:bg-red-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-neutral-950"
             >
-              <Mail className="h-4 w-4" />
-              Contact
+              <Mail className="h-4 w-4" /> Tip Line
             </a>
           </div>
 
-          <div className="md:hidden space-y-2">
-            <div>
-              <Select value={activeCategory} onValueChange={(value) => setActiveCategory(value as (typeof navLinks)[number])}>
-                <SelectTrigger aria-label="Select news category" className="h-10 border-blue-700 bg-blue-950 text-white rounded-md focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-900">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {navLinks.map((link) => (
-                    <SelectItem key={link} value={link}>{link}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <a
-              href="mailto:ciao_chris@proton.me"
-              className="h-10 px-4 text-sm font-bold bg-red-600 hover:bg-red-500 transition-colors flex items-center justify-center gap-2 rounded-md"
-            >
-              <Mail className="h-4 w-4" />
-              Contact
-            </a>
+          <div className="grid gap-2 py-3 lg:hidden">
+            <Select value={activeCategory} onValueChange={(value) => handleCategoryChange(value as SectionName)}>
+              <SelectTrigger className="h-11 rounded-none border-neutral-400 bg-white font-bold text-neutral-950 focus:ring-neutral-950">
+                <SelectValue placeholder="Select section" />
+              </SelectTrigger>
+              <SelectContent>
+                {navLinks.map((link) => (
+                  <SelectItem key={link} value={link}>
+                    {link}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </nav>
 
-      {/* Breaking News Ticker */}
-      <div className="bg-red-700 text-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center gap-3 text-sm">
-          <span className="bg-white text-red-700 px-2.5 py-0.5 rounded text-[11px] font-black tracking-wider shrink-0 shadow-sm">BREAKING</span>
-          <div className="overflow-hidden">
-            <p className="font-medium truncate">
-              {loading ? 'Loading latest news...' : breakingArticle?.title || 'Refresh for latest updates'}
-            </p>
+      <div className="border-b border-neutral-300 bg-red-800 text-white">
+        <div className="mx-auto grid max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2 text-sm md:px-6">
+          <span className="bg-white px-2 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-red-800">
+            Breaking
+          </span>
+          <p className="truncate font-semibold">
+            {loading ? 'Loading latest district reports...' : leadArticle?.title || 'Latest district updates are being prepared.'}
+          </p>
+          <ChevronRight className="h-4 w-4" />
+        </div>
+      </div>
+
+      <main id="main-content" tabIndex={-1} className="mx-auto max-w-[1440px] px-4 py-6 md:px-6 md:py-8">
+        <div className="mb-6 grid gap-3 border-y border-neutral-300 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-neutral-600 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span className="text-neutral-950">Neighborhoods:</span>
+            {neighborhoodLinks.map((link) => (
+              <a key={link} href="#" className="hover:text-red-800 hover:underline">
+                {link}
+              </a>
+            ))}
           </div>
+          <span className="text-neutral-500">Edition: {sectionKicker[activeCategory]}</span>
         </div>
-      </div>
 
-      {/* Mobile Hint — Most Read teaser above the fold */}
-      <div className="lg:hidden bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2">Most Read</h2>
-          <ol className="space-y-2">
-            {sidebarStories.slice(0, 3).map((story, i) => {
-              const isHint = i === 0 || i === 2;
-              return (
-                <li key={i} className="flex items-start gap-2.5">
-                  <span
-                    className={`text-lg font-black leading-none select-all font-headline ${
-                      isHint ? 'text-red-600/40 animate-subtle-glow' : 'text-gray-200'
-                    }`}
-                    style={isHint ? { animationDelay: `${i * 0.9}s` } : undefined}
-                  >
-                    {i + 1}
-                  </span>
-                  <p className="text-xs text-gray-700 leading-snug font-medium pt-0.5">
-                    {story}
-                  </p>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-      </div>
+        {error && (
+          <div className="mb-6 border-l-4 border-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            Live feed unavailable. Showing verified fallback stories while the newsroom reconnects.
+          </div>
+        )}
 
-      {/* Main Content */}
-      <main id="main-content" className="max-w-7xl mx-auto px-4 py-8" tabIndex={-1}>
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Column */}
-          <div className="lg:col-span-2 space-y-0">
-            {/* Lead Story */}
-            {visibleArticles.length > 0 && (
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <section className="min-w-0">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
               <ScrollReveal>
-                <div className="mb-6">
-                  <FeaturedStoryCard article={visibleArticles[0]} formatTime={formatTime} />
-                </div>
-              </ScrollReveal>
-            )}
-
-            {/* Article Grid */}
-            <div className="grid md:grid-cols-2 gap-5">
-              {loading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-lg border border-gray-100 p-5 animate-pulse shadow-sm">
-                    <div className="h-36 bg-gray-100 rounded-md mb-4"></div>
-                    <div className="h-3 w-16 bg-gray-200 rounded-full mb-3"></div>
-                    <div className="h-5 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-100 rounded mb-1"></div>
-                    <div className="h-4 bg-gray-100 rounded w-3/4"></div>
-                    <div className="h-3 w-1/3 bg-gray-100 rounded-full mt-4"></div>
-                  </div>
-                ))
-              ) : (
-                gridArticles.map((article, idx) => (
-                  <ScrollReveal key={article.id} delay={idx * 100}>
-                    <article
-                      className="bg-white rounded-lg border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300 group cursor-pointer h-full overflow-hidden shadow-sm"
-                      onClick={() => handleArticleOpen(article)}
+                <article className="border-b-2 border-neutral-950 pb-6 lg:border-b-0 lg:border-r-2 lg:pr-6">
+                  {loading ? (
+                    <div className="animate-pulse">
+                      <div className="aspect-[16/9] bg-neutral-200" />
+                      <div className="mt-5 h-4 w-24 bg-neutral-200" />
+                      <div className="mt-3 h-10 w-4/5 bg-neutral-200" />
+                      <div className="mt-3 h-4 w-full bg-neutral-200" />
+                    </div>
+                  ) : leadArticle ? (
+                    <button
+                      type="button"
+                      onClick={() => handleArticleOpen(leadArticle)}
+                      className="group block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-4"
                     >
-                      <div className="h-40 bg-gray-100 overflow-hidden rounded-t-lg">
+                      <div className="relative overflow-hidden border border-neutral-300 bg-neutral-200">
                         <ImageWithFallback
-                          src={article.image}
+                          src={leadArticle.image}
                           alt=""
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                          fallbackText="No image"
+                          className="aspect-[16/9] w-full object-cover grayscale-[12%] transition duration-700 group-hover:scale-[1.02] group-hover:grayscale-0"
+                          fallbackText="District Lead"
+                          fallbackVariant="gradient"
                         />
+                        <span className="absolute left-4 top-4 bg-red-800 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-white">
+                          Lead Story
+                        </span>
                       </div>
-                      <div className={densityCardClass}>
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full">
-                            {article.source.name}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              dismissStory(article.id);
-                            }}
-                            className="text-gray-300 hover:text-red-500 transition-colors"
-                            aria-label="Dismiss story"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 mb-2 leading-snug group-hover:text-blue-900 transition-colors font-headline">
-                          {article.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
-                          {article.description}
-                        </p>
-                        <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-                          <span className="flex items-center gap-1.5"><Clock className="h-3 w-3 opacity-60" /> {formatTime(article.publishedAt)}</span>
-                          <ExternalLink className="h-3 w-3 opacity-0 transition-opacity duration-200 group-hover:opacity-60" />
-                        </div>
+                      <p className="mt-5 text-[12px] font-black uppercase tracking-[0.2em] text-red-800">
+                        {sectionKicker[getArticleCategory(leadArticle.title, leadArticle.source.name)]}
+                      </p>
+                      <h2 className="mt-2 max-w-4xl font-headline text-4xl font-bold leading-[1.02] text-neutral-950 md:text-5xl lg:text-6xl">
+                        {leadArticle.title}
+                      </h2>
+                      <p className="mt-4 max-w-3xl text-lg leading-8 text-neutral-700">
+                        {leadArticle.description}
+                      </p>
+                      <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-neutral-300 pt-4 text-xs font-bold uppercase tracking-[0.14em] text-neutral-600">
+                        <span>{leadArticle.source.name}</span>
+                        <span aria-hidden="true">/</span>
+                        <span>{formatTime(leadArticle.publishedAt)}</span>
+                        <span aria-hidden="true">/</span>
+                        <span>{getReadTime(leadArticle)}</span>
+                        <ExternalLink className="h-4 w-4" />
                       </div>
-                    </article>
-                  </ScrollReveal>
-                ))
-              )}
+                    </button>
+                  ) : (
+                    <div className="border border-neutral-300 bg-white p-8 text-neutral-600">No stories available.</div>
+                  )}
+                </article>
+              </ScrollReveal>
+              <div className="grid gap-5">
+                <SectionTitle label="Developing" title="The Latest" />
+                {loading
+                  ? Array.from({ length: 4 }).map((_, index) => (
+                      <div key={index} className="animate-pulse border-b border-neutral-200 pb-4">
+                        <div className="h-3 w-20 bg-neutral-200" />
+                        <div className="mt-2 h-6 w-full bg-neutral-200" />
+                        <div className="mt-2 h-4 w-3/4 bg-neutral-200" />
+                      </div>
+                    ))
+                  : secondaryArticles.map((article, index) => (
+                      <ScrollReveal key={article.id} delay={index * 60}>
+                        <BriefStory article={article} onOpen={handleArticleOpen} />
+                      </ScrollReveal>
+                    ))}
+              </div>
             </div>
 
-            {/* More Articles */}
-            {!loading && moreArticles.length > 0 && (
-              <div className="mt-6 grid md:grid-cols-2 gap-5">
-                {moreArticles.map((article, idx) => (
-                  <ScrollReveal key={article.id} delay={idx * 80}>
-                    <article
-                      className="bg-white rounded-lg border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300 group cursor-pointer flex gap-4 overflow-hidden shadow-sm"
-                      onClick={() => handleArticleOpen(article)}
-                    >
-                      <div className="w-28 h-28 shrink-0 overflow-hidden rounded-l-lg">
-                        <ImageWithFallback
-                          src={article.image}
-                          alt=""
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                          fallbackText="No image"
-                          fallbackVariant="text"
-                        />
+            <section className="mt-8 border-t-2 border-neutral-950 pt-6">
+              <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-red-800">
+                    Front Page
+                  </p>
+                  <h2 className="font-headline text-3xl font-bold text-neutral-950">More From The District</h2>
+                </div>
+                <div className="flex gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+                  <button
+                    type="button"
+                    onClick={() => setReadingDensity('comfortable')}
+                    className={cn(
+                      'border px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950',
+                      readingDensity === 'comfortable'
+                        ? 'border-neutral-950 bg-neutral-950 text-white'
+                        : 'border-neutral-300 bg-white text-neutral-700 hover:border-neutral-950',
+                    )}
+                  >
+                    Comfortable
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReadingDensity('compact')}
+                    className={cn(
+                      'border px-3 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950',
+                      readingDensity === 'compact'
+                        ? 'border-neutral-950 bg-neutral-950 text-white'
+                        : 'border-neutral-300 bg-white text-neutral-700 hover:border-neutral-950',
+                    )}
+                  >
+                    Compact
+                  </button>
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  'grid gap-5 md:grid-cols-2',
+                  readingDensity === 'compact' && 'lg:grid-cols-3',
+                )}
+              >
+                {loading
+                  ? Array.from({ length: 4 }).map((_, index) => (
+                      <div key={index} className="animate-pulse border border-neutral-200 bg-white">
+                        <div className="aspect-[16/10] bg-neutral-200" />
+                        <div className="p-4">
+                          <div className="h-3 w-20 bg-neutral-200" />
+                          <div className="mt-3 h-7 w-full bg-neutral-200" />
+                          <div className="mt-3 h-4 w-5/6 bg-neutral-200" />
+                        </div>
                       </div>
-                      <div className="p-3 flex flex-col justify-center">
-                        <h4 className="text-sm font-bold text-gray-900 mb-1.5 leading-snug group-hover:text-blue-900 transition-colors font-headline">
-                          {article.title}
-                        </h4>
-                        <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-                          {article.description}
-                        </p>
-                        <span className="text-[10px] text-gray-500 flex items-center gap-1.5">
-                          <Clock className="h-2.5 w-2.5 opacity-60" /> {formatTime(article.publishedAt)}
-                        </span>
-                      </div>
-                    </article>
-                  </ScrollReveal>
+                    ))
+                  : cardArticles.map((article, index) => (
+                      <ScrollReveal key={article.id} delay={index * 50}>
+                        <StoryCard article={article} onOpen={handleArticleOpen} onDismiss={dismissStory} />
+                      </ScrollReveal>
+                    ))}
+              </div>
+
+              {moreArticles.length > 0 && (
+                <div className="mt-7 grid gap-x-8 gap-y-1 border-t border-neutral-300 pt-3 md:grid-cols-2">
+                  {moreArticles.map((article) => (
+                    <RailStory key={article.id} article={article} onOpen={handleArticleOpen} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </section>
+
+          <aside className="space-y-6 xl:border-l-2 xl:border-neutral-950 xl:pl-6">
+            <section className="border border-neutral-300 bg-white p-5">
+              <div className="mb-4 flex items-start justify-between border-b-2 border-neutral-950 pb-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-800">Weather</p>
+                  <h2 className="font-headline text-2xl font-bold leading-none">Washington, DC</h2>
+                </div>
+                <Cloud className="h-8 w-8 text-neutral-500" />
+              </div>
+              <div className="grid grid-cols-[1fr_auto] items-end gap-4">
+                <div>
+                  <p className="text-6xl font-light leading-none tracking-tight">{weather.temp}&deg;</p>
+                  <p className="mt-2 font-semibold text-neutral-700">{weather.condition}</p>
+                  <p className="text-sm text-neutral-500">Feels like {weather.feelsLike}&deg;F</p>
+                </div>
+                <div className="space-y-1 text-right text-sm font-semibold text-neutral-600">
+                  <p>High {weather.high}&deg;</p>
+                  <p>Low {weather.low}&deg;</p>
+                </div>
+              </div>
+              <div className="mt-5 grid grid-cols-2 gap-px bg-neutral-200 text-sm">
+                <WeatherMetric icon={Wind} label="Wind" value={weather.wind} />
+                <WeatherMetric icon={Droplets} label="Humidity" value={weather.humidity + '%'} />
+                <WeatherMetric icon={Gauge} label="Pressure" value={weather.pressure + String.fromCharCode(34)} />
+                <WeatherMetric icon={Thermometer} label="Dew Point" value={weather.dewPoint + 'F'} />
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t border-neutral-200 pt-3 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                <span className="inline-flex items-center gap-1.5">
+                  <Sunrise className="h-3.5 w-3.5" /> {weather.sunrise}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Sunset className="h-3.5 w-3.5" /> {weather.sunset}
+                </span>
+              </div>
+            </section>
+
+            <section className="border border-neutral-300 bg-[#fbfaf7] p-5">
+              <SectionTitle label="Civic Briefing" title="Today In DC" />
+              <ul className="space-y-4">
+                {civicBriefs.map((brief, index) => (
+                  <li key={brief} className="grid grid-cols-[32px_1fr] gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center border border-neutral-300 bg-white text-xs font-black text-red-800">
+                      {index + 1}
+                    </span>
+                    <p className="text-sm font-semibold leading-6 text-neutral-700">{brief}</p>
+                  </li>
                 ))}
+              </ul>
+            </section>
+
+            <section className="grid gap-3 border border-neutral-300 bg-white p-5">
+              <SectionTitle label="Services" title="District Status" />
+              <StatusRow icon={TrainFront} label="Metro" value="Normal service with advisories" />
+              <StatusRow icon={ShieldCheck} label="Public Safety" value="Community notices active" />
+              <StatusRow icon={Landmark} label="Council" value="Hearings and filings posted" />
+              <StatusRow icon={MapPin} label="Roads" value="Check DDOT before crossing town" />
+            </section>
+            <section className="border border-neutral-300 bg-white p-5">
+              <SectionTitle label="Most Read" title="Reader Agenda" />
+              <ol className="space-y-4">
+                {mostReadStories.map((story, index) => (
+                  <li key={story} className="grid grid-cols-[40px_1fr] gap-3 border-b border-neutral-200 pb-4 last:border-b-0 last:pb-0">
+                    <span className="font-headline text-3xl font-bold leading-none text-neutral-300">
+                      {index + 1}
+                    </span>
+                    <a href="#" className="text-sm font-bold leading-5 text-neutral-900 hover:text-red-800">
+                      {story}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            <section className="border border-neutral-300 bg-white p-5">
+              <SectionTitle label="For You" title="Reading Queue" />
+              {recommendedArticles.length > 0 ? (
+                <div className="space-y-1">
+                  {recommendedArticles.map((article) => (
+                    <RailStory key={article.id} article={article} onOpen={handleArticleOpen} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm leading-6 text-neutral-600">
+                  Open a few stories and DC4 will keep a local reading queue in this browser.
+                </p>
+              )}
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-neutral-200 pt-4 text-xs font-bold uppercase tracking-[0.12em]">
+                <button type="button" onClick={restoreDismissedStories} className="text-red-800 hover:underline">
+                  Restore hidden ({dismissedStories.length})
+                </button>
+                <button type="button" onClick={clearContinueReading} className="text-neutral-700 hover:underline">
+                  Clear queue
+                </button>
               </div>
+              <p className="mt-3 text-[11px] leading-5 text-neutral-500">
+                Saved section: {selectedCategory}. Preferences stay in this browser only.
+              </p>
+            </section>
+
+            {continueReading.length > 0 && (
+              <section className="border border-neutral-300 bg-white p-5">
+                <SectionTitle label="Continue" title="Recently Opened" />
+                <ul className="space-y-3">
+                  {continueReading.slice(0, 4).map((item) => (
+                    <li key={item.id}>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm font-bold leading-5 text-neutral-950 hover:text-red-800"
+                      >
+                        {item.title}
+                      </a>
+                      <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                        {item.category} / {item.sourceName}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
-          </div>
 
-          {/* Sidebar */}
-          <aside className="space-y-5">
-            <ScrollReveal>
-              <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h2 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-blue-900 pb-2 mb-4">Your Preferences</h2>
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <p className="font-semibold text-gray-700 mb-1.5">Reading density</p>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setReadingDensity('comfortable')}
-                        className={`px-3 py-1.5 rounded-md border transition-all duration-200 ${readingDensity === 'comfortable' ? 'bg-blue-900 text-white border-blue-900 shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                      >
-                        Comfortable
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReadingDensity('compact')}
-                        className={`px-3 py-1.5 rounded-md border transition-all duration-200 ${readingDensity === 'compact' ? 'bg-blue-900 text-white border-blue-900 shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                      >
-                        Compact
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-700">Saved category</p>
-                    <p className="text-gray-500 mt-0.5">{selectedCategory}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={restoreDismissedStories} className="text-blue-700 hover:text-blue-900 hover:underline transition-colors">
-                      Restore dismissed ({dismissedStories.length})
-                    </button>
-                    <button type="button" onClick={clearContinueReading} className="text-blue-700 hover:text-blue-900 hover:underline transition-colors">
-                      Clear continue reading
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-gray-400">Preferences stay in this browser only. No remote tracking.</p>
-                </div>
-              </div>
-            </ScrollReveal>
-
-            <ScrollReveal delay={60}>
-              <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h2 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-emerald-600 pb-2 mb-4">Recommended</h2>
-                {(() => {
-                  const recommended = forYouArticles.length > 0 ? forYouArticles : articles.slice(2, 5);
-                  return recommended.length > 0 ? (
-                    <ul className="space-y-2.5">
-                      {recommended.map((article) => (
-                        <li key={article.id}>
-                          <button type="button" onClick={() => handleArticleOpen(article)} className="text-left w-full text-sm text-gray-700 hover:text-blue-900 leading-snug transition-colors font-medium">
-                            {article.title}
-                          </button>
-                          <p className="text-[10px] text-gray-400 mt-0.5">{article.source.name} • {formatTime(article.publishedAt)}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null;
-                })()}
-              </div>
-            </ScrollReveal>
-
-            <ScrollReveal delay={80}>
-              <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h2 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-violet-600 pb-2 mb-4">Latest Updates</h2>
-                {(() => {
-                  const latestItems = continueReading.length > 0
-                    ? continueReading
-                    : articles.slice(5, 9).map((a) => ({
-                        id: a.id,
-                        title: a.title,
-                        url: a.url,
-                        sourceName: a.source.name,
-                        category: getArticleCategory(a.title, a.source.name),
-                      }));
-                  return latestItems.length > 0 ? (
-                    <ul className="space-y-2.5">
-                      {latestItems.map((item) => (
-                        <li key={item.id}>
-                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-700 hover:text-blue-900 leading-snug transition-colors font-medium">
-                            {item.title}
-                          </a>
-                          <p className="text-[11px] text-gray-400 mt-0.5">{item.category} • {item.sourceName}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null;
-                })()}
-              </div>
-            </ScrollReveal>
-
-            <ScrollReveal delay={90}>
-              <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
-                {/* Weather Header */}
-                <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-5">
-                  <div className="flex items-center justify-between mb-1">
-                    <h2 className="text-xs font-black uppercase tracking-wider opacity-80">Washington, DC Weather</h2>
-                    <span className="text-[10px] opacity-60">Updated live</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-3">
-                    <div>
-                      <div className="flex items-end gap-2">
-                        <span className="text-5xl font-extralight tabular-nums leading-none">{weather.temp}°</span>
-                        <span className="text-3xl mb-0.5">{weather.icon}</span>
-                      </div>
-                      <p className="text-sm font-medium mt-2 text-blue-100">{weather.condition}</p>
-                      <p className="text-xs text-blue-300 mt-0.5">Feels like {weather.feelsLike}°F</p>
-                    </div>
-                    <div className="text-right text-xs space-y-1">
-                      <p className="text-blue-100"><span className="text-red-300">↑</span> <span className="font-semibold text-white">{weather.high}°</span></p>
-                      <p className="text-blue-100"><span className="text-blue-300">↓</span> <span className="font-semibold text-white">{weather.low}°</span></p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Weather Details Grid */}
-                <div className="grid grid-cols-3 gap-px bg-gray-100">
-                  <div className="bg-white p-3 text-center">
-                    <Wind className="h-3.5 w-3.5 mx-auto text-gray-400 mb-1" />
-                    <p className="text-xs font-semibold text-gray-800">{weather.wind}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Wind</p>
-                  </div>
-                  <div className="bg-white p-3 text-center">
-                    <Droplets className="h-3.5 w-3.5 mx-auto text-blue-400 mb-1" />
-                    <p className="text-xs font-semibold text-gray-800">{weather.humidity}%</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Humidity</p>
-                  </div>
-                  <div className="bg-white p-3 text-center">
-                    <Cloud className="h-3.5 w-3.5 mx-auto text-gray-400 mb-1" />
-                    <p className="text-xs font-semibold text-gray-800">{weather.precipChance}%</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Precip</p>
-                  </div>
-                  <div className="bg-white p-3 text-center">
-                    <Sun className="h-3.5 w-3.5 mx-auto text-amber-400 mb-1" />
-                    <p className="text-xs font-semibold text-gray-800">{weather.uvIndex}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">UV Index</p>
-                  </div>
-                  <div className="bg-white p-3 text-center">
-                    <Gauge className="h-3.5 w-3.5 mx-auto text-gray-400 mb-1" />
-                    <p className="text-xs font-semibold text-gray-800">{weather.pressure}"</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Pressure</p>
-                  </div>
-                  <div className="bg-white p-3 text-center">
-                    <Thermometer className="h-3.5 w-3.5 mx-auto text-teal-400 mb-1" />
-                    <p className="text-xs font-semibold text-gray-800">{weather.dewPoint}°F</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Dew Point</p>
-                  </div>
-                </div>
-
-                {/* Sunrise / Sunset */}
-                <div className="flex items-center justify-between px-5 py-3 bg-gray-50 text-xs text-gray-600 border-t border-gray-100">
-                  <span className="flex items-center gap-1.5"><Sunrise className="h-3.5 w-3.5 text-amber-500" /> {weather.sunrise}</span>
-                  <span className="flex items-center gap-1.5"><Sunset className="h-3.5 w-3.5 text-orange-400" /> {weather.sunset}</span>
-                </div>
-
-                {/* Hourly Forecast */}
-                {weather.hourly.length > 0 && (
-                  <div className="border-t border-gray-100">
-                    <div className="px-5 pt-3 pb-1 flex items-center justify-between">
-                      <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Hourly</h4>
-                    </div>
-                    <div className="flex overflow-x-auto px-3 pb-3 gap-0 scrollbar-hide">
-                      {weather.hourly.slice(0, 8).map((hour, i) => (
-                        <div key={i} className="flex flex-col items-center min-w-[3.5rem] py-2 px-1">
-                          <span className="text-[10px] text-gray-500 font-medium">{i === 0 ? 'Now' : hour.time}</span>
-                          <span className="text-base my-1">{hour.icon}</span>
-                          <span className="text-xs font-semibold text-gray-800">{hour.temp}°</span>
-                          {hour.precipChance > 0 && (
-                            <span className="text-[9px] text-blue-500 font-medium mt-0.5">{hour.precipChance}%</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 7-Day Forecast */}
-                {weather.daily.length > 0 && (
-                  <div className="border-t border-gray-100">
-                    <div className="px-5 pt-3 pb-1">
-                      <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-wider">7-Day Forecast</h4>
-                    </div>
-                    <div className="px-5 pb-4">
-                      {weather.daily.map((day, i) => (
-                        <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                          <span className="text-xs font-semibold text-gray-700 w-12">{day.day}</span>
-                          <span className="text-base w-8 text-center">{day.icon}</span>
-                          {day.precipChance > 0 ? (
-                            <span className="text-[10px] text-blue-500 font-medium w-8 text-center">{day.precipChance}%</span>
-                          ) : (
-                            <span className="w-8" />
-                          )}
-                          <div className="flex items-center gap-1.5 text-xs tabular-nums">
-                            <span className="font-semibold text-gray-800 w-7 text-right">{day.high}°</span>
-                            <div className="w-12 h-1 rounded-full bg-gray-100 overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-gradient-to-r from-blue-300 to-orange-400"
-                                style={{ width: `${Math.min(100, Math.max(20, ((day.high - day.low) / 40) * 100))}%` }}
-                              />
-                            </div>
-                            <span className="text-gray-400 w-7 text-right">{day.low}°</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </ScrollReveal>
-
-            {/* Most Read */}
-            <ScrollReveal delay={100}>
-              <div className="bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
-                <h2 className="text-xs font-black text-gray-900 uppercase tracking-wider border-b-2 border-red-600 pb-2 mb-4">Most Read</h2>
-                <ol className="space-y-3.5">
-                  {sidebarStories.map((story, i) => {
-                    const isHint = i === 0 || i === 2;
-                    return (
-                      <li key={i} className="flex items-start gap-3 group cursor-pointer">
-                        <span
-                          className={`text-2xl font-black leading-none select-all font-headline ${
-                            isHint
-                              ? 'text-red-600/40 animate-subtle-glow'
-                              : 'text-gray-200'
-                          }`}
-                          style={isHint ? { animationDelay: `${i * 0.9}s` } : undefined}
-                        >
-                          {i + 1}
-                        </span>
-                        <p className="text-sm text-gray-700 leading-snug group-hover:text-blue-900 transition-colors font-medium pt-0.5">
-                          {story}
-                        </p>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </div>
-            </ScrollReveal>
-
-            {/* Contact CTA */}
-            <ScrollReveal delay={200}>
-              <div className="bg-gradient-to-br from-red-600 to-red-700 text-white p-5 rounded-lg shadow-md">
-                <h2 className="text-xs font-black uppercase tracking-wider mb-2">Get In Touch</h2>
-                <p className="text-xs text-red-100 mb-4">Have a story tip or want to connect?</p>
-                <a
-                  href="mailto:ciao_chris@proton.me"
-                  className="flex items-center justify-center gap-2 w-full h-10 bg-white text-red-700 hover:bg-red-50 rounded-md text-sm font-bold transition-all duration-200 shadow-sm hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-red-600 focus-visible:ring-white"
-                >
-                  <Mail className="h-4 w-4" />
-                  Email Us
-                </a>
-              </div>
-            </ScrollReveal>
-
+            <section className="border-2 border-neutral-950 bg-neutral-950 p-5 text-white">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-300">Tip Line</p>
+              <h2 className="mt-2 font-headline text-2xl font-bold leading-tight">Know something the District should know?</h2>
+              <p className="mt-3 text-sm leading-6 text-neutral-300">
+                Send documents, photos, calendar notices, corrections, or neighborhood leads to the DC4 desk.
+              </p>
+              <a
+                href="mailto:ciao_chris@proton.me"
+                className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 border border-white bg-white px-4 text-xs font-black uppercase tracking-[0.14em] text-neutral-950 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950"
+              >
+                <Mail className="h-4 w-4" /> Contact The Desk
+              </a>
+            </section>
           </aside>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+      <footer className="mt-10 border-t-2 border-neutral-950 bg-[#111111] text-neutral-300">
+        <div className="mx-auto max-w-[1440px] px-4 py-10 md:px-6">
+          <div className="grid gap-8 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
-              <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-4">Neighborhoods</h4>
-              <ul className="space-y-2 text-xs">
-                <li><a href="#" className="hover:text-white transition-colors">Capitol Hill</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Georgetown</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Dupont Circle</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Adams Morgan</a></li>
-              </ul>
+              <img src={dc4Logo} alt="DC4 News" className="h-10 w-auto brightness-0 invert" />
+              <p className="mt-4 max-w-md text-sm leading-6 text-neutral-400">
+                DC4 News is an independent Washington, DC front page built for local reporting, public service updates, and civic attention.
+              </p>
             </div>
-            <div>
-              <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-4">Government</h4>
-              <ul className="space-y-2 text-xs">
-                <li><a href="#" className="hover:text-white transition-colors">DC Council</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Mayor's Office</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Federal Updates</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Public Records</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-4">Sections</h4>
-              <ul className="space-y-2 text-xs">
-                <li><a href="#" className="hover:text-white transition-colors">Investigations</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Opinion</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Obituaries</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Classifieds</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-4">Connect</h4>
-              <ul className="space-y-2 text-xs">
-                <li><a href="#" className="hover:text-white transition-colors">Tip Line</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Advertise</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="mailto:ciao_chris@proton.me" className="hover:text-white transition-colors">Contact Us</a></li>
-              </ul>
-            </div>
+            <FooterList title="Coverage" items={['Local', 'Politics', 'Transit', 'Weather']} />
+            <FooterList title="Public File" items={['Corrections', 'Accessibility', 'Privacy', 'Terms']} />
+            <FooterList title="Newsroom" items={['Tip Line', 'Advertise', 'Careers', 'Contact']} />
           </div>
-          <div className="border-t border-gray-800 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-            <p>
-              &copy; <span className="font-semibold text-gray-300 animate-whisper-pulse select-all" style={{ animationDelay: '1.2s' }}>1776</span> Washington{' '}
-              <span className="font-bold text-white animate-whisper-pulse select-all" style={{ animationDelay: '0s' }}>4</span> News. All rights reserved.
-            </p>
-            <div className="flex items-center gap-5">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Accessibility</a>
-              <span className="text-gray-600 select-all tabular-nums">
-                v<span className="text-gray-300 animate-whisper-pulse" style={{ animationDelay: '2.4s' }}>4.0.1</span>
-              </span>
-            </div>
+          <div className="mt-8 flex flex-col justify-between gap-3 border-t border-neutral-800 pt-5 text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500 md:flex-row">
+            <p>Copyright 2026 DC4 News. Washington, District of Columbia.</p>
+            <p>Built for residents, commuters, and public record readers.</p>
           </div>
         </div>
       </footer>
