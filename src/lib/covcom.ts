@@ -17,7 +17,7 @@ const channels: CovcomChannel[] = [
     aliases: ['137', 'library'],
     resolve: () => ({
       type: 'redirect',
-      destination: 'https://www.federalreserve.gov/aboutthefed/aroundtheboard/gallery.htm#ad-image-14',
+      destination: 'https://www.federalreserve.gov/aboutthefed/aroundtheboard/fine-arts.htm',
       channel: 'library-access',
     }),
   },
