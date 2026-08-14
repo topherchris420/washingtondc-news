@@ -22,6 +22,7 @@ import {
 
 import dc4Logo from '@/assets/dc4-news-logo.png';
 import { GlitchOverlay } from '@/components/GlitchOverlay';
+import { OperatorMode } from '@/components/operator/OperatorMode';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { Input } from '@/components/ui/input';
@@ -330,6 +331,8 @@ const FooterList = ({ title, items }: { title: string; items: string[] }) => (
 const DCNewsLanding = () => {
   const [searchValue, setSearchValue] = useState('');
   const [glitchTarget, setGlitchTarget] = useState<string | null>(null);
+  const [operatorActive, setOperatorActive] = useState(false);
+  const [operatorEnteredAt, setOperatorEnteredAt] = useState(() => new Date());
   const [activeCategory, setActiveCategory] = useState<SectionName>('Local');
 
   const { articles, loading, error } = useDCNews();
@@ -386,6 +389,11 @@ const DCNewsLanding = () => {
     event.preventDefault();
     const action = resolveCovcomSignal(searchValue);
 
+    if (action.type === 'open-operator') {
+      setGlitchTarget('operator://library-access');
+      return;
+    }
+
     if (action.type === 'redirect') {
       if (action.glitch) {
         setGlitchTarget(action.destination);
@@ -412,12 +420,32 @@ const DCNewsLanding = () => {
     window.open(article.url, '_blank', 'noopener,noreferrer');
   };
 
+  if (operatorActive) {
+    return (
+      <OperatorMode
+        articles={articles}
+        loading={loading}
+        enteredAt={operatorEnteredAt}
+        onExit={() => {
+          setOperatorActive(false);
+          setSearchValue('');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f4f1ea] text-neutral-950 antialiased">
       <GlitchOverlay
         active={glitchTarget !== null}
         onComplete={() => {
-          if (glitchTarget) window.location.href = glitchTarget;
+          if (glitchTarget === 'operator://library-access') {
+            setOperatorEnteredAt(new Date());
+            setOperatorActive(true);
+            setGlitchTarget(null);
+          } else if (glitchTarget) {
+            window.location.href = glitchTarget;
+          }
         }}
       />
 
