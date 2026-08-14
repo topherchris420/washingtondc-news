@@ -1,7 +1,8 @@
 export type CovcomAction =
   | { type: 'none' }
   | { type: 'redirect'; destination: string; channel: string; glitch?: boolean }
-  | { type: 'open-contact'; channel: string };
+  | { type: 'open-contact'; channel: string }
+  | { type: 'open-operator'; channel: 'library-access' };
 
 export interface CovcomChannel {
   id: string;
@@ -16,8 +17,7 @@ const channels: CovcomChannel[] = [
     id: 'library-access',
     aliases: ['137', 'library'],
     resolve: () => ({
-      type: 'redirect',
-      destination: 'https://www.federalreserve.gov/aboutthefed/aroundtheboard/fine-arts.htm',
+      type: 'open-operator',
       channel: 'library-access',
     }),
   },
