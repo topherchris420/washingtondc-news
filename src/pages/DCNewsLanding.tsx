@@ -335,7 +335,7 @@ const DCNewsLanding = () => {
   const [operatorEnteredAt, setOperatorEnteredAt] = useState(() => new Date());
   const [activeCategory, setActiveCategory] = useState<SectionName>('Local');
 
-  const { articles, loading, error } = useDCNews();
+  const { articles, loading } = useDCNews();
   const { weather } = useDCWeather();
   const {
     selectedCategory,
@@ -581,12 +581,6 @@ const DCNewsLanding = () => {
           </div>
           <span className="text-neutral-500">Edition: {sectionKicker[activeCategory]}</span>
         </div>
-
-        {error && (
-          <div className="mb-6 border-l-4 border-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-            Live feed unavailable. Showing verified fallback stories while the newsroom reconnects.
-          </div>
-        )}
 
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="min-w-0">

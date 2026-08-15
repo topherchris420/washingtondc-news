@@ -13,14 +13,18 @@ A responsive local covert News website for Washington DC. Features real-time DC 
 
 ## Quick Start
 
-Simply open `index.html` in a browser, or use a local server:
+Copy `.env.example` to `.env.local` and provide a GNews API key. In production,
+set `GNEWS_API_KEY` in the hosting provider so the `/api/news` serverless route
+can retrieve live stories without exposing the key to browsers.
+
+Then install dependencies and start the Vite development server. The static
+fallback is used with plain Vite because Vite does not execute the `/api`
+serverless function; use your hosting provider's local development command when
+you need to exercise the live route locally.
 
 ```bash
-# Using Python
-python -m http.server 8080
-
-# Using Node.js
-npx serve .
+npm install
+npm run dev
 ```
 
 Then visit `http://localhost:8080`

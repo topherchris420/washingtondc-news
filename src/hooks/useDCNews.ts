@@ -183,39 +183,37 @@ function getFallbackForCategory(category: string): NewsArticle[] {
 export const useDCNews = (category?: string) => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchNews = useCallback(async () => {
     setLoading(true);
-    setError(null);
-
-    if (!supabase) {
-      setArticles(getFallbackForCategory(category || 'All'));
-      setError('Backend is not configured. Showing fallback news.');
-      setLoading(false);
-      return;
-    }
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('fetch-dc-news', {
-        body: { category: category || 'All' },
-        headers: { 'Content-Type': 'application/json' },
-      });
+      let data: { articles?: NewsArticle[] } | null = null;
 
-      if (fnError) {
-        console.error('Edge function error:', fnError);
-        throw new Error(fnError.message || 'Failed to fetch news');
+      // The same-origin route keeps the provider key on the server and works on
+      // deployments that do not use Supabase.
+      try {
+        const response = await fetch(`/api/news?category=${encodeURIComponent(category || 'All')}`);
+        if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
+          data = await response.json();
+        }
+      } catch (error) {
+        console.warn('Same-origin news route unavailable; trying backup provider:', error);
       }
 
-      if (data?.articles && data.articles.length > 0) {
-        setArticles(data.articles);
-      } else {
-        // Use category-specific fallback if API returns no results
-        setArticles(getFallbackForCategory(category || 'All'));
+      // Keep the existing edge function as a second live provider for older
+      // deployments where the same-origin function is not present yet.
+      if ((!data?.articles?.length) && supabase) {
+        const result = await supabase.functions.invoke('fetch-dc-news', {
+          body: { category: category || 'All' },
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!result.error) data = result.data;
       }
+
+      setArticles(data?.articles?.length ? data.articles : getFallbackForCategory(category || 'All'));
     } catch (err) {
       console.error('News fetch failed, using fallback:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch news');
       setArticles(getFallbackForCategory(category || 'All'));
     } finally {
       setLoading(false);
@@ -244,5 +242,5 @@ export const useDCNews = (category?: string) => {
     fetchNews();
   }, [fetchNews]);
 
-  return { articles, loading, error, refresh };
+  return { articles, loading, refresh };
 };
