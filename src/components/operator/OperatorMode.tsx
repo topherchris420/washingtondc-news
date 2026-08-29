@@ -192,8 +192,17 @@ interface WorkspaceProps {
 function Workspace({ channel, records, selectedId, setSelectedId, notes, setNotes, loading }: WorkspaceProps) {
   if (channel === 'notes') return <div className="operator-notes"><label htmlFor="operator-notes">LOCAL OBSERVATIONS // AUTO-SAVED ON THIS DEVICE</label><textarea id="operator-notes" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Enter locally stored observations..." /></div>;
   if (channel === 'sources') {
-    const sources = Array.from(new Map(records.map((record) => [record.domain, record])).values());
-    return <div className="operator-source-grid">{sources.map((record) => <button key={record.domain} onClick={() => setSelectedId(record.id)}><strong>{record.source}</strong><span>{record.domain}</span><small>{records.filter((r) => r.domain === record.domain).length} RECORD(S) / PUBLIC</small></button>)}</div>;
+    // ⚡ Bolt: Replaced O(N^2) double-loop (Map creation + Array.filter inside map)
+    // with a single O(N) pass to group sources and count them simultaneously.
+    const sourceGroups = Array.from(
+      records.reduce((acc, record) => {
+        const group = acc.get(record.domain) ?? { record: record, count: 0 };
+        group.count++;
+        group.record = record; // Preserve original behavior: use the last record seen for the ID
+        return acc.set(record.domain, group);
+      }, new Map<string, { record: OperatorRecord; count: number }>()).values()
+    );
+    return <div className="operator-source-grid">{sourceGroups.map(({ record, count }) => <button key={record.domain} onClick={() => setSelectedId(record.id)}><strong>{record.source}</strong><span>{record.domain}</span><small>{count} RECORD(S) / PUBLIC</small></button>)}</div>;
   }
   if (channel === 'signals') return <div className="operator-signal-board"><div><strong>FEED STATE</strong><span>{loading ? 'SYNCHRONIZING' : 'STABLE'}</span></div><div><strong>PUBLIC SOURCES</strong><span>{new Set(records.map((r) => r.domain)).size} INDEXED</span></div><div><strong>LOCAL CORRELATION</strong><span>AVAILABLE</span></div><p>Signals are locally derived from the public DC4 news feed. No remote shell, private system, or privileged source is connected.</p></div>;
   if (channel === 'timeline') {
