@@ -1,0 +1,3 @@
+## 2026-08-28 - Array methods in React Render Loops
+**Learning:** Found O(N*M) performance bottlenecks in React `useMemo` hooks where `Array.prototype.includes` was used inside `Array.prototype.filter`. While this is a common React pattern, it can cause significant UI thread blocking when lists grow large, as the loop is fully synchronous.
+**Action:** Always check `useMemo` hooks that iterate over arrays. Convert inner lookup arrays to `Set` objects before the loop to achieve O(1) lookups. Additionally, check for chained array methods that repeat the same filtering operations and reuse pre-filtered memoized results where possible.

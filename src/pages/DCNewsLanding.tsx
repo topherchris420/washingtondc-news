@@ -351,10 +351,10 @@ const DCNewsLanding = () => {
     clearContinueReading,
   } = useNewsPreferences();
 
-  const visibleArticles = useMemo(
-    () => articles.filter((article) => !dismissedStories.includes(article.id)),
-    [articles, dismissedStories],
-  );
+  const visibleArticles = useMemo(() => {
+    const dismissedSet = new Set(dismissedStories);
+    return articles.filter((article) => !dismissedSet.has(article.id));
+  }, [articles, dismissedStories]);
 
   const sectionArticles = useMemo(
     () => visibleArticles.filter((article) => getArticleCategory(article.title, article.source.name) === activeCategory),
@@ -372,13 +372,13 @@ const DCNewsLanding = () => {
   const moreArticles = orderedArticles.slice(11, 17);
 
   const recommendedArticles = useMemo(() => {
-    const personalized = articles
-      .filter((article) => !dismissedStories.includes(article.id))
-      .filter((article) => viewedCategories.includes(getArticleCategory(article.title, article.source.name)))
+    const viewedCategoriesSet = new Set(viewedCategories);
+    const personalized = visibleArticles
+      .filter((article) => viewedCategoriesSet.has(getArticleCategory(article.title, article.source.name)))
       .slice(0, 4);
 
     return personalized.length > 0 ? personalized : articles.slice(2, 6);
-  }, [articles, dismissedStories, viewedCategories]);
+  }, [articles, visibleArticles, viewedCategories]);
 
   const handleCategoryChange = (category: SectionName) => {
     setActiveCategory(category);
