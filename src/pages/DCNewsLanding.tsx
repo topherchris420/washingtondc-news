@@ -10,7 +10,6 @@ import {
   Mail,
   MapPin,
   Radio,
-  Search,
   ShieldCheck,
   Sunrise,
   Sunset,
@@ -25,7 +24,7 @@ import { GlitchOverlay } from '@/components/GlitchOverlay';
 import { OperatorMode } from '@/components/operator/OperatorMode';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { ScrollReveal } from '@/components/ScrollReveal';
-import { Input } from '@/components/ui/input';
+import { SearchForm } from '@/components/SearchForm';
 import {
   Select,
   SelectContent,
@@ -37,7 +36,6 @@ import { useDCNews, type NewsArticle } from '@/hooks/useDCNews';
 import { useDCWeather } from '@/hooks/useDCWeather';
 import { useNewsPreferences } from '@/hooks/useNewsPreferences';
 import { cn } from '@/lib/utils';
-import { resolveCovcomSignal } from '@/lib/covcom';
 
 type SectionName =
   | 'Local'
@@ -329,7 +327,6 @@ const FooterList = ({ title, items }: { title: string; items: string[] }) => (
 );
 
 const DCNewsLanding = () => {
-  const [searchValue, setSearchValue] = useState('');
   const [glitchTarget, setGlitchTarget] = useState<string | null>(null);
   const [operatorActive, setOperatorActive] = useState(false);
   const [operatorEnteredAt, setOperatorEnteredAt] = useState(() => new Date());
@@ -385,29 +382,6 @@ const DCNewsLanding = () => {
     setSelectedCategory(category);
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const action = resolveCovcomSignal(searchValue);
-
-    if (action.type === 'open-operator') {
-      setGlitchTarget('operator://library-access');
-      return;
-    }
-
-    if (action.type === 'redirect') {
-      if (action.glitch) {
-        setGlitchTarget(action.destination);
-        return;
-      }
-      window.location.href = action.destination;
-      return;
-    }
-
-    if (action.type === 'open-contact') {
-      window.location.href = 'mailto:ciao_chris@proton.me';
-    }
-  };
-
   const handleArticleOpen = (article: NewsArticle) => {
     trackArticleView({
       id: article.id,
@@ -428,7 +402,6 @@ const DCNewsLanding = () => {
         enteredAt={operatorEnteredAt}
         onExit={() => {
           setOperatorActive(false);
-          setSearchValue('');
         }}
       />
     );
@@ -490,25 +463,10 @@ const DCNewsLanding = () => {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex items-center justify-center gap-2 lg:justify-end">
-              <label className="relative block w-full max-w-sm lg:max-w-xs">
-                <span className="sr-only">Search DC4 News</span>
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
-                <Input
-                  type="text"
-                  value={searchValue}
-                  onChange={(event) => setSearchValue(event.target.value)}
-                  placeholder="Search, tips, signals..."
-                  className="h-10 rounded-none border-neutral-400 bg-white pl-9 text-sm focus-visible:ring-neutral-950"
-                />
-              </label>
-              <button
-                type="submit"
-                className="h-10 border border-neutral-950 bg-neutral-950 px-4 text-xs font-black uppercase tracking-[0.16em] text-white transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2"
-              >
-                Search
-              </button>
-            </form>
+            <SearchForm
+              onGlitchTarget={setGlitchTarget}
+              onOperatorOpen={() => setOperatorActive(true)}
+            />
           </div>
         </div>
       </header>
